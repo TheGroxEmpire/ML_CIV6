@@ -29,7 +29,7 @@ if __name__ == '__main__':
 
         for step in range(N_GAME_STEPS):
 
-            # --- Determine what action to take. For three units it is one of 343 possibilities
+            # --- Determine what action to take. For three units it is one of 343 possibilities (7^3)
             action = random.randint(0, 342)
 
             # --- Perform that action in the environment

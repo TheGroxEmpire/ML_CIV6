@@ -27,16 +27,22 @@ class C_Sprite(pygame.sprite.Sprite):
                  y,
                  sprite,
                  name_instance,
+                 team,
                  hp=10,
                  hp_max = 100,
-                 strength=20):
+                 strength=20,
+                 strength_ranged = 0,
+                 dug_in = 0):
         self.x = x
         self.y = y
         self.sprite = sprite
         self.name_instance = name_instance
+        self.team = team
         self.hp_max = hp_max
         self.hp = hp
         self.strength = strength
+        self.strength_ranged = strength_ranged
+        self.dug_in = dug_in
         self.alive = True
         self.status = 'alive'
         self.status_default = 'alive'
@@ -58,16 +64,23 @@ class C_Unit(C_Sprite):
                  y,
                  sprite,
                  name_instance,
+                 team,
                  hp=100,
                  hp_max=100,
-                 strength=20):
+                 strength=20,
+                 strength_ranged = 0,
+                 dug_in = 0):
+                 
         super().__init__(x,
                          y,
                          sprite,
                          name_instance,
+                         team,
                          hp,
                          hp_max,
-                         strength)
+                         strength,
+                         strength_ranged,
+                         dug_in)
 
     def move(self,
              dx,
@@ -85,13 +98,13 @@ class C_Unit(C_Sprite):
             # --- set unit status to 'hit wall' if it hit the wall
             if tile_is_wall:
                 self.status = 'hit wall'
-
+            
             target = map_check_for_creatures(self.x + dx,
                                              self.y + dy,
-                                             exclude_object=self)
+                                             self)
 
 
-            if target and target.__class__ != C_Unit:
+            if target and target.team != self.team:
                 damage_output, damage_taken = attack(self, target)
                 #print('taken {}, output {}'.format(damage_taken, damage_output))
 
@@ -105,13 +118,18 @@ class C_Unit(C_Sprite):
                     target.take_damage(damage_output, self.alive)
                     self.status = 'attacked'
 
-            # --- Heal the unit if it doesn't move
+            # --- Heal and fortify the unit if it doesn't move
             if dx == 0 and dy == 0:
                 self.hp += 10
                 self.status = 'healed'
                 if self.hp > self.hp_max:
                     self.hp = self.hp_max
                     self.status = self.status_default
+                # If unit is already fortified, add 1 more dug in level (max 2)
+                if self.dug_in < 2:
+                    self.dug_in += 1
+            else:
+                self.dug_in = 0
 
             # --- Move the unit if it can
             if not tile_is_wall and target is None:
@@ -146,15 +164,16 @@ class C_City(C_Sprite):
                  y,
                  sprite,
                  name_instance,
+                 team='defender',
                  hp=1,
                  hp_max=100,
                  wall_hp=100,
                  strength=18,
                  strength_ranged=0,
                  ranged_combat=False,
-                 heal=False):
+                 heal=False,
+                 dug_in = 0):
         self.wall_hp = wall_hp
-        self.strength_ranged = strength_ranged
         self.ranged_combat = ranged_combat
         self.heal = heal
 
@@ -162,9 +181,12 @@ class C_City(C_Sprite):
                          y,
                          sprite,
                          name_instance,
+                         team,
                          hp,
                          hp_max,
-                         strength)
+                         strength,
+                         strength_ranged, 
+                         dug_in)
 
     def take_turn(self):
 
@@ -175,7 +197,7 @@ class C_City(C_Sprite):
             items_within_range = []
             for ii in range(-2, 2):
                 for jj in range(-2, 2):
-                    temp = map_check_for_creatures(self.x - ii, self.y - jj, exclude_object=self)
+                    temp = map_check_for_creatures(self.x - ii, self.y - jj, self)
                     # print('checked location', self.x - ii, self.y - jj)
                     if temp:
                         # print(temp.__class__, ' within range')
@@ -244,18 +266,21 @@ class C_City(C_Sprite):
 
 
 def attack(aggressor,
-           target,
-           ranged=False):
-    '''Base attack definition using the formula found on CivFanatics
+           target):
+    '''Base attack definition using the formula found on Civ fandom wiki
     TODO: Attack accounting for walls....'''
 
-    if ranged:
-        strength_diff = aggressor.strength_ranged - target.strength
-    else:
-        strength_diff = aggressor.strength - target.strength
+    defense_bonus = target.dug_in * 3
 
-    damage_out = np.round(random.randint(24, 36) * np.exp(strength_diff / 25.0) * (random.randint(75, 100) / 100.0))
-    damage_taken = np.round(random.randint(24, 36) * np.exp(-strength_diff / 25.0) * (random.randint(75, 100) / 100.0))
+    if aggressor.strength_ranged > 0:
+        strength_diff = np.round(aggressor.strength_ranged - aggressor.hp / 10) - np.round(target.strength - target.hp / 10 + defense_bonus)
+        damage_taken = 0
+    else:
+        strength_diff = np.round(aggressor.strength - aggressor.hp / 10) - np.round(target.strength - target.hp / 10 + defense_bonus)
+        damage_taken = np.round(30 * np.exp(-strength_diff * 0.04) * (random.randint(80, 120) / 100.0))
+
+    damage_out = np.round(30 * np.exp(strength_diff * 0.04) * (random.randint(80, 120) / 100.0))
+    
 
     return damage_out, damage_taken
 
@@ -277,31 +302,19 @@ def map_create():
 
 def map_check_for_creatures(x,
                             y,
-                            exclude_object=None):
+                            actor):
     target = None
 
-    # --- check objectlist to find creature at that location that isn't excluded
-    if exclude_object:
-        for object in GAME_OBJECTS:
-            if (object is not exclude_object and
-                    object.x == x and
-                    object.y == y and
-                    object.alive):
-                target = object
+    # --- check objectlist to find creature at that location that isn't the actor
+    for object in GAME_OBJECTS:
+        if (object is not actor and
+                object.x == x and
+                object.y == y and
+                object.alive):
+            target = object
 
-            if target:
-                return target
-
-    # --- check objectlist to find any creature at that location
-    else:
-        for object in GAME_OBJECTS:
-            if (object.x == x and
-                    object.y == y and
-                    object.alive):
-                target = object
-
-            if target:
-                return target
+        if target:
+            return target
 
 
 # ---------------------------------------------
@@ -672,7 +685,7 @@ class Game():
         loc = -1 # position around the city -1 if not by, 0/8, 1/8, ..., 8/8 otherwise
         city_loc = -1
 
-        observation = [] # city health, dx unit 1, dy unit 1, hp_norm unit 1, dx unit 2, dy unit 2, hp_nomr unit 2, ...
+        observation = [] # city health, dx unit 1, dy unit 1, hp_norm unit 1, dx unit 2, dy unit 2, hp_norm unit 2, ...
 
         # --- Find the city location in GAME_OBJECTS
         for obj in enumerate(GAME_OBJECTS):
@@ -729,7 +742,7 @@ class Game():
                         ep_number = 0):
         """This function initializes the main window, and pygame"""
 
-        global SURFACE_MAIN, GAME_MAP, PLAYER, ENEMY, GAME_OBJECTS, episode_number, TURN_NUMBER#, CLOCK
+        global SURFACE_MAIN, GAME_MAP, PLAYER, ENEMY, GAME_OBJECTS, CITY_OBJECTS, DEFENDER_OBJECTS, ATTACKER_OBJECTS, episode_number, TURN_NUMBER#, CLOCK
         #self.episode_number = episode_number
 
         episode_number = ep_number
@@ -755,43 +768,99 @@ class Game():
         # --- Create the game map. Fills the dictionary with values for each tile
         GAME_MAP = map_create()
 
-        SPRITE_LOCATIONS = random.sample(constants.HEX_LOCATIONS, 3)
+        SPRITE_LOCATIONS = random.sample(constants.HEX_LOCATIONS, 8)
 
-        PLAYER = C_Unit(SPRITE_LOCATIONS[0][0],
+        # --- Attacker units
+        A_WARRIOR_1 = C_Unit(SPRITE_LOCATIONS[0][0],
                         SPRITE_LOCATIONS[0][1],
                         constants.S_PLAYER,
-                        "Otto",
+                        "A_warrior_1",
+                        team='attacker',
                         strength=20,
                         hp=100,
                         hp_max=100)
 
-        PLAYER2 = C_Unit(SPRITE_LOCATIONS[1][0],
+        A_WARRIOR_2 = C_Unit(SPRITE_LOCATIONS[1][0],
                         SPRITE_LOCATIONS[1][1],
                         constants.S_PLAYER,
-                        "Fynn",
+                        "A_warrior_2",
+                        team='attacker',
                         strength=20,
                         hp=100,
                         hp_max=100)
 
-        PLAYER3 = C_Unit(SPRITE_LOCATIONS[2][0],
+        A_WARRIOR_3 = C_Unit(SPRITE_LOCATIONS[2][0],
                         SPRITE_LOCATIONS[2][1],
                         constants.S_PLAYER,
-                        "Victor",
+                        "A_warrior_3",
+                        team='attacker',
                         strength=20,
+                        hp=100,
+                        hp_max=100)
+
+        A_SLINGER_1 = C_Unit(SPRITE_LOCATIONS[3][0],
+                        SPRITE_LOCATIONS[3][1],
+                        constants.S_PLAYER,
+                        "A_slinger_1",
+                        team='attacker',
+                        strength=5,
+                        strength_ranged=15,
+                        hp=100,
+                        hp_max=100)
+
+        A_SLINGER_2 = C_Unit(SPRITE_LOCATIONS[4][0],
+                        SPRITE_LOCATIONS[4][1],
+                        constants.S_PLAYER,
+                        "A_slinger_2",
+                        team='attacker',
+                        strength=5,
+                        strength_ranged=15,
+                        hp=100,
+                        hp_max=100)
+        # --- Defender units
+        D_WARRIOR_1 = C_Unit(SPRITE_LOCATIONS[5][0],
+                        SPRITE_LOCATIONS[5][1],
+                        constants.S_PLAYER,
+                        "D_warrior_1",
+                        team='defender',
+                        strength=20,
+                        hp=100,
+                        hp_max=100)
+
+        D_WARRIOR_2 = C_Unit(SPRITE_LOCATIONS[6][0],
+                        SPRITE_LOCATIONS[6][1],
+                        constants.S_PLAYER,
+                        "D_warrior_2",
+                        team='defender',
+                        strength=20,
+                        hp=100,
+                        hp_max=100)
+
+        D_SLINGER_1 = C_Unit(SPRITE_LOCATIONS[7][0],
+                        SPRITE_LOCATIONS[7][1],
+                        constants.S_PLAYER,
+                        "D_slinger_1",
+                        team='defender',
+                        strength=5,
+                        strength_ranged=15,
                         hp=100,
                         hp_max=100)
 
         CITY = C_City(constants.LOC_CITY[0],
                       constants.LOC_CITY[1],
                       constants.S_CITY,
-                      "Ottertopia",
+                      "City",
+                      team='defender',
                       hp=100,
                       strength=28,
                       ranged_combat=False,
                       heal=True)
 
         # Must have units first then the city last!!!
-        GAME_OBJECTS = [PLAYER, PLAYER2, PLAYER3, CITY]
+        CITY_OBJECTS = [CITY]
+        ATTACKER_OBJECTS = [A_WARRIOR_1, A_WARRIOR_2, A_WARRIOR_3, A_SLINGER_1, A_SLINGER_2]
+        DEFENDER_OBJECTS = [D_WARRIOR_1, D_WARRIOR_2, D_SLINGER_1]
+        GAME_OBJECTS = ATTACKER_OBJECTS + DEFENDER_OBJECTS + CITY_OBJECTS
 
 
     def game_handle_keys_human(self,

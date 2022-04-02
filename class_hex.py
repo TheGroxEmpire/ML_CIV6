@@ -48,7 +48,7 @@ class HexCell(pygame.sprite.Sprite):
 
     def set_terrain(self,
                     terrain_type):
-        """Terrian defintions"""
+        """Terrain defintions"""
         #self.image_outline = constants.S_OUTLINE
         self.terrain_type = terrain_type.upper()
 
