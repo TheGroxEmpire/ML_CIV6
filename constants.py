@@ -72,20 +72,28 @@ MOVEMENT_DIR['SPACE']['EVEN'] = [0,0]
 MOVEMENT_DIR['SPACE']['ODD'] = [0,0]
 
 # --- List of possible actions the multiple units, to be used as the action (aka a number to call them) for the AI
-MOVEMENT_ONE_UNIT = []
-for dir in directions:
-    MOVEMENT_ONE_UNIT.append(dir)
+# MOVEMENT_ONE_UNIT = []
+# for dir in directions:
+#     MOVEMENT_ONE_UNIT.append(dir)
 
-MOVEMENT_TWO_UNITS = []
-for dir in directions:
-    for dir2 in directions:
-        MOVEMENT_TWO_UNITS.append([dir, dir2])
+# MOVEMENT_TWO_UNITS = []
+# for dir in directions:
+#     for dir2 in directions:
+#         MOVEMENT_TWO_UNITS.append([dir, dir2])
 
 MOVEMENT_THREE_UNITS = []
 for dir in directions:
     for dir2 in directions:
         for dir3 in directions:
             MOVEMENT_THREE_UNITS.append([dir, dir2, dir3])
+
+MOVEMENT_FIVE_UNITS = []
+for dir in directions:
+    for dir2 in directions:
+        for dir3 in directions:
+            for dir4 in directions:
+                for dir5 in directions:
+                    MOVEMENT_FIVE_UNITS.append([dir, dir2, dir3, dir4, dir5])
 
 
 NEIGHBORING_TILES = [(1,0), (1,-1), (0,-1), (-1,0), (1,1), (0,1)]
@@ -98,7 +106,8 @@ NEIGHBORING_TILES = [(1,0), (1,-1), (0,-1), (-1,0), (1,1), (0,1)]
 #       |_|
 
 #character
-S_PLAYER = pygame.transform.scale(pygame.image.load('data/Otter_Warrior.png'), (CELL_WIDTH, CELL_HEIGHT))
+S_WARRIOR = pygame.transform.scale(pygame.image.load('data/warrior_1.png'), (CELL_WIDTH, CELL_HEIGHT))
+S_SLINGER = pygame.transform.scale(pygame.image.load('data/slinger_1.png'), (CELL_WIDTH, CELL_HEIGHT))
 S_CITY = pygame.transform.scale(pygame.image.load('data/Ottertopia.png'), (CELL_WIDTH, CELL_HEIGHT))
 S_PLAINS = pygame.transform.scale(pygame.image.load('data/plains.png'), (HEX_SIZE, HEX_SIZE))
 

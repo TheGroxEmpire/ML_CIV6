@@ -336,16 +336,18 @@ def draw_game():
     # --- Draw the text
     for obj in GAME_OBJECTS:
         # Draw the HP above the unit
+        color = {'attacker': constants.COLOR_RED,
+                'defender': constants.COLOR_BLUE}
         draw_text(SURFACE_MAIN, "{:.0f}/{:.0f}".format(obj.hp, obj.hp_max),
                   (GAME_MAP.grid[(int(obj.x), int(obj.y))].rect.x + GAME_MAP.grid[(int(obj.x), int(obj.y))].rect.width / 2,
                    GAME_MAP.grid[(int(obj.x), int(obj.y))].rect.y - GAME_MAP.grid[(int(obj.x), int(obj.y))].rect.h*2/7),
-                  constants.COLOR_RED, outline=True)
+                  color[obj.team], outline=True)
 
         # Draw the units name
-        draw_text(SURFACE_MAIN, obj.name_instance,
-                  (GAME_MAP.grid[(int(obj.x), int(obj.y))].rect.x + GAME_MAP.grid[(int(obj.x), int(obj.y))].rect.width / 2,
-                   GAME_MAP.grid[(int(obj.x), int(obj.y))].rect.y + GAME_MAP.grid[(int(obj.x), int(obj.y))].rect.h*4/5),
-                  constants.COLOR_PURPLE, outline=True)
+        # draw_text(SURFACE_MAIN, obj.name_instance,
+        #           (GAME_MAP.grid[(int(obj.x), int(obj.y))].rect.x + GAME_MAP.grid[(int(obj.x), int(obj.y))].rect.width / 2,
+        #            GAME_MAP.grid[(int(obj.x), int(obj.y))].rect.y + GAME_MAP.grid[(int(obj.x), int(obj.y))].rect.h*4/5),
+        #           constants.COLOR_PURPLE, outline=True)
 
 
     # Draw the episode number
@@ -536,11 +538,12 @@ class Game():
         exit()
 
     def step(self,
-             action=0):
-        """In this function we take a step in the main game."""
+            attacker_action_input=0,
+            defender_action_input=0):
+        """In this function we take a step for both agent in the main game."""
 
 
-        global GAME_OBJECTS, TURN_NUMBER
+        global CITY_OBJECTS, TURN_NUMBER
 
         TURN_NUMBER += 1
 
@@ -548,125 +551,104 @@ class Game():
         if self.render:
             draw_game()
 
-        # --- player action definition
-        player_action = 'no-action'
+        # --- agent action definition
+        attacker_action = 'no-action'
+        defender_action = 'no-action'
         game_quit = False
-        reward = 0
+        attacker_reward = 0
+        defender_reward = 0
 
-        # --- Check for the city location, there has to be a better way...
-        # maybe have the city not under GAME_OBJECTS?
-        for obj in enumerate(GAME_OBJECTS):
-            if obj[1].__class__ == C_City:
-                city_loc = obj[0]
-
-        # --- Human loop to control only one unit
-        if self.human and not game_quit:
-            # --- Loop over each object to take the turn
-            for obj in GAME_OBJECTS:
-                if obj.__class__ == C_Unit:
-                    if obj.status != 'dead':
-                        if self.human and not game_quit:
-                            waiting_for_input = True
-                            while waiting_for_input:
-                                # --- handle player input
-                                player_action = self.game_handle_keys_human(obj)
-                                if player_action == 'player-moved':
-                                    waiting_for_input = False
-
-                                if player_action == 'QUIT':
-                                    game_quit = True
-                                    waiting_for_input = False
-                            if self.render:
-                                draw_game()
-
-                        # --- Get rewards after each turn, to account for attacking the city each turn
-                        reward += self.get_rewards()
-
-                        # --- Check to see if the city is dead or not
-                        if GAME_OBJECTS[city_loc].hp <= 0:
-                            game_quit = True
-                            break
+        # --- Check for the city location
+        for obj in enumerate(CITY_OBJECTS):
+            city_loc = obj[0]
 
 
-        elif self.ml_ai and not game_quit:
+        if self.ml_ai and not game_quit:
             # --- First perform actions by the units
-            player_action = self.game_handle_moves_ml_ai(action)
+            attacker_action = self.game_handle_moves_ml_ai('attacker', attacker_action_input)
+
+            defender_action = self.game_handle_moves_ml_ai('defender', defender_action_input)
 
             if self.render:
                 draw_game()
 
             # --- Check to see if the city is dead or not
-            if GAME_OBJECTS[city_loc].hp <= 0:
+            if CITY_OBJECTS[city_loc].hp <= 0:
                 game_quit = True
 
 
-        if player_action == 'QUIT':
+        if attacker_action == 'QUIT':
             game_quit = True
 
-        # City takes a turn once the HUMAN or ML_AI moves
-        elif player_action != 'no-action':
-            for obj in GAME_OBJECTS:
-                if obj.__class__ == C_City:
-                    obj.take_turn()
-
         # --- Get rewards after the city attacks, in case a unit dies
-        reward += self.get_rewards()
+        attacker_reward += self.get_rewards('attacker')
+        defender_reward += self.get_rewards('defender')
 
-        # --- Subtract 1 for the turn penalty
-        reward -= 1
+        # --- Agent reward for the turn
+        attacker_reward -= 1
+        defender_reward += 1
 
         #CLOCK.tick(constants.GAME_FPS)
 
-        return self.get_observation(), reward, game_quit
+        return self.get_observation(), attacker_reward, defender_reward, game_quit
 
-    def get_rewards(self):
-        '''This definition will return the reward status for each step as
-        well as the location of the city relative to the units'''
-        global GAME_OBJECTS
+    def get_rewards(self, team):
+        '''This definition will return the attacker agent reward status for each step as
+        well as the location of the city relative to the attacker agent units'''
+        global CITY_OBJECTS, ATTACKER_OBJECTS, DEFENDER_OBJECTS
 
+        own_objects = {'attacker': ATTACKER_OBJECTS,
+                        'defender': DEFENDER_OBJECTS}
+        opponent_objects = {'attacker': DEFENDER_OBJECTS,
+                            'defender': ATTACKER_OBJECTS}
         reward = 0
 
-        # --- Find the city location in GAME_OBJECTS
-        for obj in enumerate(GAME_OBJECTS):
-            if obj[1].__class__ == C_City:
+        
+        for obj in enumerate(CITY_OBJECTS):
                 city_loc = obj[0]
-                if obj[1].status == 'dead':
-                    reward += 3
-                    obj[1].status = None
-                elif obj[1].status == 'took damage':
-                    reward += 0.5
-                    obj[1].status = obj[1].status_default
-                elif obj[1].status == 'healed':
-                    reward -= 0.3
-                    obj[1].status = obj[1].status_default
+                if team == 'attacker':
+                    # --- Rewards for city status
+                        if obj[1].status == 'dead':
+                            reward += 5
+                            obj[1].status = None
+                        elif obj[1].status == 'took damage':
+                            reward += 0.5
+                            obj[1].status = obj[1].status_default
+                        elif obj[1].status == 'healed':
+                            reward -= 0.3
+                            obj[1].status = obj[1].status_default            
 
+        # --- REWARDS for own unit status
+        for obj in own_objects[team]:
+            #print('BEFORE: {} status of {}'.format(obj.name_instance, obj.status))
+            if obj.status == 'dead':
+                reward -= 2
+                obj.status = None
+            elif obj.status == 'took damage':
+                reward += 0
+                obj.status = obj.status_default
+            elif obj.status == 'hit wall':
+                reward -= 1
+                obj.status = obj.status_default
+            elif obj.status == 'healed':
+                reward += 0.1
+                obj.status = obj.status_default
+            elif obj.status == 'attacked':
+                reward += 0.2
+                obj.status = obj.status_default
 
-        # --- REWARDS for unit specific actions
-        for obj in GAME_OBJECTS:
-            if obj.__class__ == C_Unit:
-                #print('BEFORE: {} status of {}'.format(obj.name_instance, obj.status))
-                if obj.status == 'dead':
-                    reward -= 10
-                    obj.status = None
-                elif obj.status == 'took damage':
-                    reward += 0
-                    obj.status = obj.status_default
-                elif obj.status == 'hit wall':
-                    reward -= 1
-                    obj.status = obj.status_default
-                elif obj.status == 'healed':
-                    reward += 0.1
-                    obj.status = obj.status_default
-                elif obj.status == 'attacked':
-                    reward += 0.2
-                    obj.status = obj.status_default
-
-
-                # --- Rewards for how far they are away from the city!
-                # - This is a linear reward, 0 for being next to city, -0.5 for maximum distance, per unit
-                dist = hex_distance([obj.x, obj.y], [GAME_OBJECTS[city_loc].x,GAME_OBJECTS[city_loc].y])
-                dist_reward = float(dist - 1) / (max([constants.MAP_HEIGHT, constants.MAP_WIDTH]) - 2)
-                reward -= dist_reward / 0.5
+            # --- Rewards for how far they are away from the city!
+            # - This is a linear reward, 0 for being next to city, -0.5 for maximum distance, per unit
+            dist = hex_distance([obj.x, obj.y], [CITY_OBJECTS[city_loc].x,CITY_OBJECTS[city_loc].y])
+            dist_reward = float(dist - 1) / (max([constants.MAP_HEIGHT, constants.MAP_WIDTH]) - 2)
+            reward -= dist_reward / 0.5
+        
+        # --- REWARDS for opponent unit status
+        for obj in opponent_objects[team]:
+            #print('BEFORE: {} status of {}'.format(obj.name_instance, obj.status))
+            if obj.status == 'dead':
+                reward += 2
+                obj.status = None
 
 
         return reward
@@ -700,27 +682,6 @@ class Game():
                 dy_norm = (GAME_OBJECTS[city_loc].y - obj.y) / constants.MAP_HEIGHT
                 observation.append(dx_norm)
                 observation.append(dy_norm)
-
-                # --- Find the positional location around the city, not implimented!
-                if np.abs(GAME_OBJECTS[city_loc].x - obj.x) <= 1 and False:
-
-                    if GAME_OBJECTS[city_loc].x - obj.x > 0:
-                        if GAME_OBJECTS[city_loc].y - obj.y > 0: loc = 1
-                        if GAME_OBJECTS[city_loc].y - obj.y == 0: loc = 8
-                        if GAME_OBJECTS[city_loc].y - obj.y < 0: loc = 7
-
-                    if GAME_OBJECTS[city_loc].x - obj.x == 0:
-                        if GAME_OBJECTS[city_loc].y - obj.y > 0: loc = 2
-                        if GAME_OBJECTS[city_loc].y - obj.y == 0: loc = 91
-                        if GAME_OBJECTS[city_loc].y - obj.y < 0: loc = 6
-
-                    if GAME_OBJECTS[city_loc].x - obj.x < 0:
-                        if GAME_OBJECTS[city_loc].y - obj.y > 0: loc = 3
-                        if GAME_OBJECTS[city_loc].y - obj.y == 0: loc = 4
-                        if GAME_OBJECTS[city_loc].y - obj.y < 0: loc = 5
-                    if loc != -1:
-                        loc /= 8
-
                 # --- Normalized HP
                 observation.append(obj.hp / obj.hp_max)
 
@@ -773,7 +734,7 @@ class Game():
         # --- Attacker units
         A_WARRIOR_1 = C_Unit(SPRITE_LOCATIONS[0][0],
                         SPRITE_LOCATIONS[0][1],
-                        constants.S_PLAYER,
+                        constants.S_WARRIOR,
                         "A_warrior_1",
                         team='attacker',
                         strength=20,
@@ -782,7 +743,7 @@ class Game():
 
         A_WARRIOR_2 = C_Unit(SPRITE_LOCATIONS[1][0],
                         SPRITE_LOCATIONS[1][1],
-                        constants.S_PLAYER,
+                        constants.S_WARRIOR,
                         "A_warrior_2",
                         team='attacker',
                         strength=20,
@@ -791,7 +752,7 @@ class Game():
 
         A_WARRIOR_3 = C_Unit(SPRITE_LOCATIONS[2][0],
                         SPRITE_LOCATIONS[2][1],
-                        constants.S_PLAYER,
+                        constants.S_WARRIOR,
                         "A_warrior_3",
                         team='attacker',
                         strength=20,
@@ -800,7 +761,7 @@ class Game():
 
         A_SLINGER_1 = C_Unit(SPRITE_LOCATIONS[3][0],
                         SPRITE_LOCATIONS[3][1],
-                        constants.S_PLAYER,
+                        constants.S_SLINGER,
                         "A_slinger_1",
                         team='attacker',
                         strength=5,
@@ -810,7 +771,7 @@ class Game():
 
         A_SLINGER_2 = C_Unit(SPRITE_LOCATIONS[4][0],
                         SPRITE_LOCATIONS[4][1],
-                        constants.S_PLAYER,
+                        constants.S_SLINGER,
                         "A_slinger_2",
                         team='attacker',
                         strength=5,
@@ -820,7 +781,7 @@ class Game():
         # --- Defender units
         D_WARRIOR_1 = C_Unit(SPRITE_LOCATIONS[5][0],
                         SPRITE_LOCATIONS[5][1],
-                        constants.S_PLAYER,
+                        constants.S_WARRIOR,
                         "D_warrior_1",
                         team='defender',
                         strength=20,
@@ -829,7 +790,7 @@ class Game():
 
         D_WARRIOR_2 = C_Unit(SPRITE_LOCATIONS[6][0],
                         SPRITE_LOCATIONS[6][1],
-                        constants.S_PLAYER,
+                        constants.S_WARRIOR,
                         "D_warrior_2",
                         team='defender',
                         strength=20,
@@ -838,7 +799,7 @@ class Game():
 
         D_SLINGER_1 = C_Unit(SPRITE_LOCATIONS[7][0],
                         SPRITE_LOCATIONS[7][1],
-                        constants.S_PLAYER,
+                        constants.S_SLINGER,
                         "D_slinger_1",
                         team='defender',
                         strength=5,
@@ -903,7 +864,7 @@ class Game():
                     object.move(constants.MOVEMENT_DIR['E'][parity][0], constants.MOVEMENT_DIR['E'][parity][1])
                     return "player-moved"
 
-                if event.key == pygame.K_x:
+                if event.key == pygame.K_c:
                     object.move(constants.MOVEMENT_DIR['SE'][parity][0], constants.MOVEMENT_DIR['SE'][parity][1])
                     return "player-moved"
 
@@ -918,74 +879,111 @@ class Game():
         return 'no-action'
 
     def game_handle_moves_ml_ai(self,
+                                team,
                                 action):
 
-        global GAME_OBJECTS
+        global ATTACKER_OBJECTS, DEFENDER_OBJECTS
 
-        # --- determine the number of units on the battlefield
-        if len(GAME_OBJECTS) - 1 == 1:
-            print('in one')
-            # --- Determine the parity
-            if GAME_OBJECTS[0].y % 2 == 0:
+        # # --- determine the number of units on the battlefield
+        # if len(GAME_OBJECTS) - 1 == 1:
+        #     print('in one')
+        #     # --- Determine the parity
+        #     if GAME_OBJECTS[0].y % 2 == 0:
+        #         parity = 'EVEN'
+        #     else:
+        #         parity = 'ODD'
+
+        #     # --- Make a movement
+        #     direction = constants.MOVEMENT_ONE_UNIT[action]
+        #     GAME_OBJECTS[0].move(constants.MOVEMENT_DIR[direction][parity][0],
+        #                          constants.MOVEMENT_DIR[direction][parity][1])
+        #     return "player-moved"
+
+
+
+        # if len(GAME_OBJECTS) - 1 == 2:
+        #     # --- Determine the parity
+        #     if GAME_OBJECTS[0].y % 2 == 0:
+        #         parity = 'EVEN'
+        #     else:
+        #         parity = 'ODD'
+        #     # --- Determine the parity
+        #     if GAME_OBJECTS[1].y % 2 == 0:
+        #         parity2 = 'EVEN'
+        #     else:
+        #         parity2 = 'ODD'
+
+        #     # --- Make a movement
+        #     direction = constants.MOVEMENT_TWO_UNITS[action]
+        #     GAME_OBJECTS[0].move(constants.MOVEMENT_DIR[direction[0]][parity][0],
+        #                          constants.MOVEMENT_DIR[direction[0]][parity][1])
+        #     GAME_OBJECTS[1].move(constants.MOVEMENT_DIR[direction[1]][parity2][0],
+        #                          constants.MOVEMENT_DIR[direction[1]][parity2][1])
+        #     return "player-moved"
+
+
+        # --- Movement commands for attacker
+        # --- Determine the parity
+        if team == 'attacker':
+            if ATTACKER_OBJECTS[0].y % 2 == 0:
                 parity = 'EVEN'
             else:
                 parity = 'ODD'
-
-            # --- Make a movement
-            direction = constants.MOVEMENT_ONE_UNIT[action]
-            GAME_OBJECTS[0].move(constants.MOVEMENT_DIR[direction][parity][0],
-                                 constants.MOVEMENT_DIR[direction][parity][1])
-            return "player-moved"
-
-
-
-        if len(GAME_OBJECTS) - 1 == 2:
             # --- Determine the parity
-            if GAME_OBJECTS[0].y % 2 == 0:
-                parity = 'EVEN'
-            else:
-                parity = 'ODD'
-            # --- Determine the parity
-            if GAME_OBJECTS[1].y % 2 == 0:
+            if ATTACKER_OBJECTS[1].y % 2 == 0:
                 parity2 = 'EVEN'
             else:
                 parity2 = 'ODD'
-
-            # --- Make a movement
-            direction = constants.MOVEMENT_TWO_UNITS[action]
-            GAME_OBJECTS[0].move(constants.MOVEMENT_DIR[direction[0]][parity][0],
-                                 constants.MOVEMENT_DIR[direction[0]][parity][1])
-            GAME_OBJECTS[1].move(constants.MOVEMENT_DIR[direction[1]][parity2][0],
-                                 constants.MOVEMENT_DIR[direction[1]][parity2][1])
-            return "player-moved"
-
-
-        # --- Movement commands for three units
-        if len(GAME_OBJECTS) - 1 == 3:
             # --- Determine the parity
-            if GAME_OBJECTS[0].y % 2 == 0:
+            if ATTACKER_OBJECTS[2].y % 2 == 0:
+                parity3 = 'EVEN'
+            else:
+                parity3 = 'ODD'
+            if ATTACKER_OBJECTS[3].y % 2 == 0:
+                parity4 = 'EVEN'
+            else:
+                parity4 = 'ODD'
+            if ATTACKER_OBJECTS[4].y % 2 == 0:
+                parity5 = 'EVEN'
+            else:
+                parity5 = 'ODD'
+            # --- Make a movement
+            direction = constants.MOVEMENT_FIVE_UNITS[action]
+            ATTACKER_OBJECTS[0].move(constants.MOVEMENT_DIR[direction[0]][parity][0],
+                                    constants.MOVEMENT_DIR[direction[0]][parity][1])
+            ATTACKER_OBJECTS[1].move(constants.MOVEMENT_DIR[direction[1]][parity2][0],
+                                    constants.MOVEMENT_DIR[direction[1]][parity2][1])
+            ATTACKER_OBJECTS[2].move(constants.MOVEMENT_DIR[direction[1]][parity3][0],
+                                    constants.MOVEMENT_DIR[direction[1]][parity3][1])
+            ATTACKER_OBJECTS[3].move(constants.MOVEMENT_DIR[direction[1]][parity4][0],
+                                    constants.MOVEMENT_DIR[direction[1]][parity4][1])
+            ATTACKER_OBJECTS[4].move(constants.MOVEMENT_DIR[direction[1]][parity5][0],
+                                    constants.MOVEMENT_DIR[direction[1]][parity5][1])
+        else:
+            if DEFENDER_OBJECTS[0].y % 2 == 0:
                 parity = 'EVEN'
             else:
                 parity = 'ODD'
             # --- Determine the parity
-            if GAME_OBJECTS[1].y % 2 == 0:
+            if DEFENDER_OBJECTS[1].y % 2 == 0:
                 parity2 = 'EVEN'
             else:
                 parity2 = 'ODD'
             # --- Determine the parity
-            if GAME_OBJECTS[2].y % 2 == 0:
+            if DEFENDER_OBJECTS[2].y % 2 == 0:
                 parity3 = 'EVEN'
             else:
                 parity3 = 'ODD'
             # --- Make a movement
             direction = constants.MOVEMENT_THREE_UNITS[action]
-            GAME_OBJECTS[0].move(constants.MOVEMENT_DIR[direction[0]][parity][0],
-                                 constants.MOVEMENT_DIR[direction[0]][parity][1])
-            GAME_OBJECTS[1].move(constants.MOVEMENT_DIR[direction[1]][parity2][0],
-                                 constants.MOVEMENT_DIR[direction[1]][parity2][1])
-            GAME_OBJECTS[2].move(constants.MOVEMENT_DIR[direction[1]][parity3][0],
-                                 constants.MOVEMENT_DIR[direction[1]][parity3][1])
-            return "player-moved"
+            DEFENDER_OBJECTS[0].move(constants.MOVEMENT_DIR[direction[0]][parity][0],
+                                    constants.MOVEMENT_DIR[direction[0]][parity][1])
+            DEFENDER_OBJECTS[1].move(constants.MOVEMENT_DIR[direction[1]][parity2][0],
+                                    constants.MOVEMENT_DIR[direction[1]][parity2][1])
+            DEFENDER_OBJECTS[2].move(constants.MOVEMENT_DIR[direction[1]][parity3][0],
+                                    constants.MOVEMENT_DIR[direction[1]][parity3][1])
+
+        return "player-moved"
 
 
 
