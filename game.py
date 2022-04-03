@@ -267,7 +267,7 @@ class C_City(C_Sprite):
 
 def attack(aggressor,
            target):
-    '''Base attack definition using the formula found on Civ fandom wiki
+    '''Base attack definition using the formula found on CivFanatics
     TODO: Attack accounting for walls....'''
 
     defense_bonus = target.dug_in * 3
@@ -277,9 +277,9 @@ def attack(aggressor,
         damage_taken = 0
     else:
         strength_diff = np.round(aggressor.strength - aggressor.hp / 10) - np.round(target.strength - target.hp / 10 + defense_bonus)
-        damage_taken = np.round(30 * np.exp(-strength_diff * 0.04) * (random.randint(80, 120) / 100.0))
+        damage_taken = np.round(30 * np.exp(-strength_diff * 0.04) * (random.randint(75, 125) / 100.0))
 
-    damage_out = np.round(30 * np.exp(strength_diff * 0.04) * (random.randint(80, 120) / 100.0))
+    damage_out = np.round(30 * np.exp(strength_diff * 0.04) * (random.randint(75, 125) / 100.0))
     
 
     return damage_out, damage_taken
