@@ -1,6 +1,7 @@
 # run_game.py
 # Basic file how to run the game and control it with an AI
 
+import time
 import numpy as np
 import game
 import matplotlib.pyplot as plt
@@ -10,8 +11,8 @@ if __name__ == '__main__':
 
 
     # --- Set up your algorithm here
-    N_EPISODES = 100
-    N_EPISODE_STEPS = 50
+    N_EPISODES = 1000
+    N_EPISODE_STEPS = 30
 
     # --- Setting up the game environment
     env = game.Game(ml_ai=True, render=True)
@@ -22,8 +23,12 @@ if __name__ == '__main__':
     state = env.get_observation()
 
     # --- instantiate agents
-    attacker_agent = dqn.Vanilla_DQN(state, 16807)
-    defender_agent  = dqn.Vanilla_DQN(state, 343)
+    attacker_agent = dqn.Vanilla_DQN('attacker_agent', state, 16807)
+    defender_agent  = dqn.Vanilla_DQN('defender_agent', state, 343)
+
+    # --- load checkpoint
+    attacker_agent.load_checkpoint()
+    defender_agent.load_checkpoint()
 
     # --- Rewards array for plot
     attacker_r = []
@@ -33,6 +38,9 @@ if __name__ == '__main__':
         # --- Initialize the game by putting units and city on the playing field, etc.
         env.game_initialize(ep_number=epoch)
         state = env.get_observation()
+
+        # --- Get start time
+        s = time.time()
         for step in range(N_EPISODE_STEPS):
 
             # --- Determine what action to take. 
@@ -46,6 +54,7 @@ if __name__ == '__main__':
             
             # --- Store state and action into memory
             attacker_agent.remember(state, next_state, attacker_action, attacker_reward, done)
+            defender_agent.remember(state, next_state, defender_action, defender_reward, done)
             
             # --- Update the current state of the game
             state = next_state      
@@ -53,11 +62,19 @@ if __name__ == '__main__':
             # --- Break the step loop if the game is done, aka the city is dead
             if done:
                 break
-        
+
+        # --- Experience replay
+        attacker_agent.replay()
+        defender_agent.replay()
         # --- Store latest reward
         attacker_r.append(attacker_reward)
         defender_r.append(defender_reward) 
-        print(f"Episode: {N_EPISODES}")
+        # --- Get end time
+        e = time.time()
+        print(f"Episode: {epoch}, time spent: {round(e-s, 2)}s")
+
+        defender_agent.save_checkpoint()
+        attacker_agent.save_checkpoint()
         
     Episodes = np.arange(0, N_EPISODES, 1)
     plt.plot(Episodes, attacker_r, label='Attacker rewards')

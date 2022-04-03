@@ -611,7 +611,7 @@ class Game():
                 if team == 'attacker':
                     # --- Rewards for city status
                         if obj[1].status == 'dead':
-                            reward += 5
+                            reward += 10
                             obj[1].status = None
                         elif obj[1].status == 'took damage':
                             reward += 0.5
@@ -686,8 +686,8 @@ class Game():
                 observation.append(dy_norm)
                 # --- Normalized HP
                 observation.append(obj.hp / obj.hp_max)
-
-        return np.array(observation)
+        
+        return np.array(observation).reshape(1, -1)
 
     def get_current_state(self):
         """Use this to get unit position as well as health, used for rendering in Blender"""
