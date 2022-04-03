@@ -11,7 +11,7 @@ if __name__ == '__main__':
 
 
     # --- Set up your algorithm here
-    N_EPISODES = 1000
+    N_EPISODES = 100
     N_EPISODE_STEPS = 30
 
     # --- Setting up the game environment
