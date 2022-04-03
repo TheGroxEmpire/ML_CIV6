@@ -564,10 +564,12 @@ class Game():
 
 
         if self.ml_ai and not game_quit:
-            # --- First perform actions by the units
+            # --- Attacker agent turn
             attacker_action = self.game_handle_moves_ml_ai('attacker', attacker_action_input)
-
+            # --- Defender agent turn
             defender_action = self.game_handle_moves_ml_ai('defender', defender_action_input)
+            for obj in CITY_OBJECTS:
+                obj.take_turn()
 
             if self.render:
                 draw_game()

@@ -22,8 +22,8 @@ if __name__ == '__main__':
     state = env.get_observation()
 
     # --- instantiate agents
-    attacker_agent = dqn.DQN(state, 16807)
-    defender_agent  = dqn.DQN(state, 343)
+    attacker_agent = dqn.Vanilla_DQN(state, 16807)
+    defender_agent  = dqn.Vanilla_DQN(state, 343)
 
     # --- Rewards array for plot
     attacker_r = []
@@ -57,6 +57,7 @@ if __name__ == '__main__':
         # --- Store latest reward
         attacker_r.append(attacker_reward)
         defender_r.append(defender_reward) 
+        print(f"Episode: {N_EPISODES}")
         
     Episodes = np.arange(0, N_EPISODES, 1)
     plt.plot(Episodes, attacker_r, label='Attacker rewards')

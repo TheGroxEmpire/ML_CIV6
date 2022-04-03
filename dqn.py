@@ -4,7 +4,7 @@ from keras.layers import Dense, Input
 import random
 from collections import deque
 
-class DQN():
+class Vanilla_DQN():
     def __init__(self,
                 state,
                 action_size,
