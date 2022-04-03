@@ -7,13 +7,14 @@ from collections import deque
 class DQN():
     def __init__(self,
                 state,
+                action_size,
                 epsilon=1, 
                 epsilon_decay=0.995, 
                 epsilon_min=0.01, 
                 batch_size=32, 
                 discount_factor=0.9):
         self.state_size = state.shape[0]
-        self.action_size = 1
+        self.action_size = action_size
         self.epsilon = epsilon
         self.epsilon_decay = epsilon_decay
         self.epsilon_min = epsilon_min

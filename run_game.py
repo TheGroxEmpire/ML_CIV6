@@ -3,7 +3,7 @@
 
 import numpy as np
 import game
-import random
+import matplotlib.pyplot as plt
 import dqn
 
 if __name__ == '__main__':
@@ -11,7 +11,7 @@ if __name__ == '__main__':
 
     # --- Set up your algorithm here
     N_EPISODES = 100
-    N_EPISODE_STEPS = 20
+    N_EPISODE_STEPS = 50
 
     # --- Setting up the game environment
     env = game.Game(ml_ai=True, render=True)
@@ -21,17 +21,18 @@ if __name__ == '__main__':
     # with three units this will be a list of length 10
     state = env.get_observation()
 
-    #instantiate agents
-    attacker_agent = dqn.DQN(state)
-    defender_agent  = dqn.DQN(state)
+    # --- instantiate agents
+    attacker_agent = dqn.DQN(state, 16807)
+    defender_agent  = dqn.DQN(state, 343)
 
+    # --- Rewards array for plot
+    attacker_r = []
+    defender_r = []
     for epoch in range(N_EPISODES):
 
         # --- Initialize the game by putting units and city on the playing field, etc.
         env.game_initialize(ep_number=epoch)
         state = env.get_observation()
-        attacker_r = []
-        defender_r = []
         for step in range(N_EPISODE_STEPS):
 
             # --- Determine what action to take. 
@@ -47,23 +48,22 @@ if __name__ == '__main__':
             attacker_agent.remember(state, next_state, attacker_action, attacker_reward, done)
             
             # --- Update the current state of the game
-            state = next_state
-
-            # --- Store latest reward
-            attacker_r.append(attacker_reward)
-            defender_r.append(defender_reward)       
+            state = next_state      
 
             # --- Break the step loop if the game is done, aka the city is dead
             if done:
-                attacker_r = np.mean(attacker_r)
-                defender_r = np.mean(defender_r)
-                print("Episode number: ", epoch, ", attacker rewards average: ", attacker_r, ", defender rewards average: ", defender_r, "turns taken: ", step)
-
-                # --- Save stats
-                file = open("./plot/dqn-stats", 'a')
-                file.write(f"Episode number: {N_EPISODES}, attacker rewards average: {attacker_r}, defender rewards average: {defender_r}")
-                file.close()
                 break
+        
+        # --- Store latest reward
+        attacker_r.append(attacker_reward)
+        defender_r.append(defender_reward) 
+        
+    Episodes = np.arange(0, N_EPISODES, 1)
+    plt.plot(Episodes, attacker_r, label='Attacker rewards')
+    plt.plot(Episodes, defender_r, label='Defender rewards')
+    plt.title('Rewards vs Episodes')
+    plt.legend()
+    plt.show()
 
             
 
