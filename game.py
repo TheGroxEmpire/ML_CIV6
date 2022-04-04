@@ -223,11 +223,11 @@ class C_City(C_Sprite):
             tiles_within_range = []
             for ii in range(len(temp)):
                 tiles_within_range.append(temp[ii].index)
-            # Check to make sure there are three creatures within one tile
+            # Check to make sure there are three enemy unit within one tile
             items_within_range = []
             for obj in GAME_OBJECTS:
                 for tile in tiles_within_range:
-                    if obj.x == tile[0] and obj.y == tile[1] and obj.alive:
+                    if obj.x == tile[0] and obj.y == tile[1] and obj.alive and obj.team != self.team:
                         #print(f'position {obj.x} {obj.y} {obj.name_instance}')
                         items_within_range.append(temp)
 
@@ -239,7 +239,7 @@ class C_City(C_Sprite):
                 if self.hp > self.hp_max:
                     self.hp = self.hp_max
             else:
-                pass
+                self.status = 'healing blocked'
                 #print(f'Three units are surrounding the city')
 
 
@@ -618,7 +618,10 @@ class Game():
                             obj[1].status = obj[1].status_default
                         elif obj[1].status == 'healed':
                             reward -= 0.3
-                            obj[1].status = obj[1].status_default            
+                            obj[1].status = obj[1].status_default
+                        elif obj[1].status == 'healing blocked':
+                            reward += 0.5
+                            obj[1].status = obj[1].status_default                
 
         # --- REWARDS for own unit status
         for obj in own_objects[team]:
@@ -889,44 +892,6 @@ class Game():
 
         global ATTACKER_OBJECTS, DEFENDER_OBJECTS
 
-        # # --- determine the number of units on the battlefield
-        # if len(GAME_OBJECTS) - 1 == 1:
-        #     print('in one')
-        #     # --- Determine the parity
-        #     if GAME_OBJECTS[0].y % 2 == 0:
-        #         parity = 'EVEN'
-        #     else:
-        #         parity = 'ODD'
-
-        #     # --- Make a movement
-        #     direction = constants.MOVEMENT_ONE_UNIT[action]
-        #     GAME_OBJECTS[0].move(constants.MOVEMENT_DIR[direction][parity][0],
-        #                          constants.MOVEMENT_DIR[direction][parity][1])
-        #     return "player-moved"
-
-
-
-        # if len(GAME_OBJECTS) - 1 == 2:
-        #     # --- Determine the parity
-        #     if GAME_OBJECTS[0].y % 2 == 0:
-        #         parity = 'EVEN'
-        #     else:
-        #         parity = 'ODD'
-        #     # --- Determine the parity
-        #     if GAME_OBJECTS[1].y % 2 == 0:
-        #         parity2 = 'EVEN'
-        #     else:
-        #         parity2 = 'ODD'
-
-        #     # --- Make a movement
-        #     direction = constants.MOVEMENT_TWO_UNITS[action]
-        #     GAME_OBJECTS[0].move(constants.MOVEMENT_DIR[direction[0]][parity][0],
-        #                          constants.MOVEMENT_DIR[direction[0]][parity][1])
-        #     GAME_OBJECTS[1].move(constants.MOVEMENT_DIR[direction[1]][parity2][0],
-        #                          constants.MOVEMENT_DIR[direction[1]][parity2][1])
-        #     return "player-moved"
-
-
         # --- Movement commands for attacker
         # --- Determine the parity
         if team == 'attacker':
@@ -958,12 +923,12 @@ class Game():
                                     constants.MOVEMENT_DIR[direction[0]][parity][1])
             ATTACKER_OBJECTS[1].move(constants.MOVEMENT_DIR[direction[1]][parity2][0],
                                     constants.MOVEMENT_DIR[direction[1]][parity2][1])
-            ATTACKER_OBJECTS[2].move(constants.MOVEMENT_DIR[direction[1]][parity3][0],
-                                    constants.MOVEMENT_DIR[direction[1]][parity3][1])
-            ATTACKER_OBJECTS[3].move(constants.MOVEMENT_DIR[direction[1]][parity4][0],
-                                    constants.MOVEMENT_DIR[direction[1]][parity4][1])
-            ATTACKER_OBJECTS[4].move(constants.MOVEMENT_DIR[direction[1]][parity5][0],
-                                    constants.MOVEMENT_DIR[direction[1]][parity5][1])
+            ATTACKER_OBJECTS[2].move(constants.MOVEMENT_DIR[direction[2]][parity3][0],
+                                    constants.MOVEMENT_DIR[direction[2]][parity3][1])
+            ATTACKER_OBJECTS[3].move(constants.MOVEMENT_DIR[direction[3]][parity4][0],
+                                    constants.MOVEMENT_DIR[direction[3]][parity4][1])
+            ATTACKER_OBJECTS[4].move(constants.MOVEMENT_DIR[direction[4]][parity5][0],
+                                    constants.MOVEMENT_DIR[direction[4]][parity5][1])
         else:
             if DEFENDER_OBJECTS[0].y % 2 == 0:
                 parity = 'EVEN'
@@ -985,8 +950,8 @@ class Game():
                                     constants.MOVEMENT_DIR[direction[0]][parity][1])
             DEFENDER_OBJECTS[1].move(constants.MOVEMENT_DIR[direction[1]][parity2][0],
                                     constants.MOVEMENT_DIR[direction[1]][parity2][1])
-            DEFENDER_OBJECTS[2].move(constants.MOVEMENT_DIR[direction[1]][parity3][0],
-                                    constants.MOVEMENT_DIR[direction[1]][parity3][1])
+            DEFENDER_OBJECTS[2].move(constants.MOVEMENT_DIR[direction[2]][parity3][0],
+                                    constants.MOVEMENT_DIR[direction[2]][parity3][1])
 
         return "player-moved"
 

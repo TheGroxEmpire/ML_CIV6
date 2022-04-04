@@ -108,7 +108,7 @@ NEIGHBORING_TILES = [(1,0), (1,-1), (0,-1), (-1,0), (1,1), (0,1)]
 #character
 S_WARRIOR = pygame.transform.scale(pygame.image.load('data/warrior_1.png'), (CELL_WIDTH, CELL_HEIGHT))
 S_SLINGER = pygame.transform.scale(pygame.image.load('data/slinger_1.png'), (CELL_WIDTH, CELL_HEIGHT))
-S_CITY = pygame.transform.scale(pygame.image.load('data/Ottertopia.png'), (CELL_WIDTH, CELL_HEIGHT))
+S_CITY = pygame.transform.scale(pygame.image.load('data/city.png'), (CELL_WIDTH, CELL_HEIGHT))
 S_PLAINS = pygame.transform.scale(pygame.image.load('data/plains.png'), (HEX_SIZE, HEX_SIZE))
 
 

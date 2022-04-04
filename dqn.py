@@ -1,8 +1,8 @@
 import os
 import numpy as np
-import tensorflow as tf
+import keras.backend as K
 from keras.models import Model
-from keras.layers import Dense, Input
+from keras.layers import Dense, Input, Conv1D, Flatten, Add, Subtract, Lambda
 import random
 from collections import deque
 
@@ -88,3 +88,39 @@ class Vanilla_DQN():
             print("Loading existing weight checkpoint")
         else:
             print("Weight checkpoint can't be loaded")
+
+class Dueling_DQN(Vanilla_DQN):
+    def __init__(self,
+                state,
+                action_size,
+                epsilon=1, 
+                epsilon_decay=0.995, 
+                epsilon_min=0.01, 
+                batch_size=32, 
+                discount_factor=0.9):
+        
+        super().__init__(state,
+                action_size,
+                epsilon, 
+                epsilon_decay, 
+                epsilon_min, 
+                batch_size, 
+                discount_factor)
+    
+    def create_model(self):
+        """Create Dueling DQN model"""
+        input = Input(shape=(self.state_size))
+
+        value = Dense(8, activation="relu")(input)
+        value = Dense(1, activation="relu")(value)
+        advantage = Dense(8, activation="relu")(input)
+        advantage = Dense(self.action_size, activation="relu")(advantage)
+        advantage_mean = Lambda(lambda x: K.mean(x, axis=1))(advantage)
+        advantage = Subtract()([advantage, advantage_mean])
+        out = Add()([value, advantage])
+
+        model = Model(inputs=input, outputs=out)
+        model.compile(optimizer="adam", loss="mse")
+
+        return model
+

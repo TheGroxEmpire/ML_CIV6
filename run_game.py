@@ -11,8 +11,9 @@ if __name__ == '__main__':
 
 
     # --- Set up your algorithm here
-    N_EPISODES = 900
-    N_EPISODE_STEPS = 30
+    N_EPISODES = 1000
+    N_EPISODE_STEPS = 40
+    algorithm_version = '1_Vanilla-DQN'
 
     # --- Setting up the game environment
     env = game.Game(ml_ai=True, render=True)
@@ -27,12 +28,14 @@ if __name__ == '__main__':
     defender_agent  = dqn.Vanilla_DQN(state, 343)
 
     # --- load checkpoint
-    attacker_agent.load_checkpoint('attacker_1000eps')
-    defender_agent.load_checkpoint('defender_1000eps')
+    #attacker_agent.load_checkpoint('attacker_v1')
+    #defender_agent.load_checkpoint('defender_v1')
 
     # --- Rewards array for plot
     attacker_r = []
     defender_r = []
+
+    training_start_time = time.time()
     for epoch in range(N_EPISODES):
 
         # --- Initialize the game by putting units and city on the playing field, etc.
@@ -72,15 +75,17 @@ if __name__ == '__main__':
         # --- Get end time
         e = time.time()
         print(f"Episode: {epoch}, time spent: {round(e-s, 2)}s")
-
-        defender_agent.save_checkpoint('attacker_1000eps')
-        attacker_agent.save_checkpoint('defender_1000eps')
         
+    training_end_time = time.time()
+    print(f"Training finished. Total elapsed time: {round(training_end_time-training_start_time, 2)}s")
+    defender_agent.save_checkpoint(f'attacker_v{algorithm_version}_{N_EPISODES}eps')
+    attacker_agent.save_checkpoint(f'defender_v{algorithm_version}_{N_EPISODES}eps')
     Episodes = np.arange(0, N_EPISODES, 1)
     plt.plot(Episodes, attacker_r, label='Attacker rewards')
     plt.plot(Episodes, defender_r, label='Defender rewards')
     plt.title('Rewards vs Episodes')
     plt.legend()
+    plt.savefig(f"plots/rewards_vs_episodes_v{algorithm_version}_{N_EPISODES}eps.png")
     plt.show()
 
             
