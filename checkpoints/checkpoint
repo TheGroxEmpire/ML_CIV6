@@ -1,0 +1,2 @@
+model_checkpoint_path: "dqn_vanilla_checkpoint-defender_v1_Vanilla-DQN_1000eps"
+all_model_checkpoint_paths: "dqn_vanilla_checkpoint-defender_v1_Vanilla-DQN_1000eps"
