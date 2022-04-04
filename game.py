@@ -731,11 +731,14 @@ class Game():
         # --- Create the game map. Fills the dictionary with values for each tile
         GAME_MAP = map_create()
 
-        SPRITE_LOCATIONS = random.sample(constants.HEX_LOCATIONS, 8)
+        # --- Agents main starting location
+        ATTACKER_LOCATION = [6, 4]
+        DEFENDER_LOCATION = [2, 4]
+
 
         # --- Attacker units
-        A_WARRIOR_1 = C_Unit(SPRITE_LOCATIONS[0][0],
-                        SPRITE_LOCATIONS[0][1],
+        A_WARRIOR_1 = C_Unit(ATTACKER_LOCATION[0],
+                        ATTACKER_LOCATION[1]-1,
                         constants.S_WARRIOR,
                         "A_warrior_1",
                         team='attacker',
@@ -743,8 +746,8 @@ class Game():
                         hp=100,
                         hp_max=100)
 
-        A_WARRIOR_2 = C_Unit(SPRITE_LOCATIONS[1][0],
-                        SPRITE_LOCATIONS[1][1],
+        A_WARRIOR_2 = C_Unit(ATTACKER_LOCATION[0]+1,
+                        ATTACKER_LOCATION[1],
                         constants.S_WARRIOR,
                         "A_warrior_2",
                         team='attacker',
@@ -752,8 +755,8 @@ class Game():
                         hp=100,
                         hp_max=100)
 
-        A_WARRIOR_3 = C_Unit(SPRITE_LOCATIONS[2][0],
-                        SPRITE_LOCATIONS[2][1],
+        A_WARRIOR_3 = C_Unit(ATTACKER_LOCATION[0],
+                        ATTACKER_LOCATION[1]+1,
                         constants.S_WARRIOR,
                         "A_warrior_3",
                         team='attacker',
@@ -761,8 +764,8 @@ class Game():
                         hp=100,
                         hp_max=100)
 
-        A_SLINGER_1 = C_Unit(SPRITE_LOCATIONS[3][0],
-                        SPRITE_LOCATIONS[3][1],
+        A_SLINGER_1 = C_Unit(ATTACKER_LOCATION[0]+1,
+                        ATTACKER_LOCATION[1]+1,
                         constants.S_SLINGER,
                         "A_slinger_1",
                         team='attacker',
@@ -771,8 +774,8 @@ class Game():
                         hp=100,
                         hp_max=100)
 
-        A_SLINGER_2 = C_Unit(SPRITE_LOCATIONS[4][0],
-                        SPRITE_LOCATIONS[4][1],
+        A_SLINGER_2 = C_Unit(ATTACKER_LOCATION[0]+1,
+                        ATTACKER_LOCATION[1]-1,
                         constants.S_SLINGER,
                         "A_slinger_2",
                         team='attacker',
@@ -781,8 +784,8 @@ class Game():
                         hp=100,
                         hp_max=100)
         # --- Defender units
-        D_WARRIOR_1 = C_Unit(SPRITE_LOCATIONS[5][0],
-                        SPRITE_LOCATIONS[5][1],
+        D_WARRIOR_1 = C_Unit(DEFENDER_LOCATION[0]+1,
+                        DEFENDER_LOCATION[1]-1,
                         constants.S_WARRIOR,
                         "D_warrior_1",
                         team='defender',
@@ -790,8 +793,8 @@ class Game():
                         hp=100,
                         hp_max=100)
 
-        D_WARRIOR_2 = C_Unit(SPRITE_LOCATIONS[6][0],
-                        SPRITE_LOCATIONS[6][1],
+        D_WARRIOR_2 = C_Unit(DEFENDER_LOCATION[0]+1,
+                        DEFENDER_LOCATION[1],
                         constants.S_WARRIOR,
                         "D_warrior_2",
                         team='defender',
@@ -799,8 +802,8 @@ class Game():
                         hp=100,
                         hp_max=100)
 
-        D_SLINGER_1 = C_Unit(SPRITE_LOCATIONS[7][0],
-                        SPRITE_LOCATIONS[7][1],
+        D_SLINGER_1 = C_Unit(DEFENDER_LOCATION[0]+1,
+                        DEFENDER_LOCATION[1]+1,
                         constants.S_SLINGER,
                         "D_slinger_1",
                         team='defender',

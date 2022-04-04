@@ -11,7 +11,7 @@ if __name__ == '__main__':
 
 
     # --- Set up your algorithm here
-    N_EPISODES = 100
+    N_EPISODES = 900
     N_EPISODE_STEPS = 30
 
     # --- Setting up the game environment
@@ -23,12 +23,12 @@ if __name__ == '__main__':
     state = env.get_observation()
 
     # --- instantiate agents
-    attacker_agent = dqn.Vanilla_DQN('attacker_agent', state, 16807)
-    defender_agent  = dqn.Vanilla_DQN('defender_agent', state, 343)
+    attacker_agent = dqn.Vanilla_DQN(state, 16807)
+    defender_agent  = dqn.Vanilla_DQN(state, 343)
 
     # --- load checkpoint
-    attacker_agent.load_checkpoint()
-    defender_agent.load_checkpoint()
+    attacker_agent.load_checkpoint('attacker_1000eps')
+    defender_agent.load_checkpoint('defender_1000eps')
 
     # --- Rewards array for plot
     attacker_r = []
@@ -73,8 +73,8 @@ if __name__ == '__main__':
         e = time.time()
         print(f"Episode: {epoch}, time spent: {round(e-s, 2)}s")
 
-        defender_agent.save_checkpoint()
-        attacker_agent.save_checkpoint()
+        defender_agent.save_checkpoint('attacker_1000eps')
+        attacker_agent.save_checkpoint('defender_1000eps')
         
     Episodes = np.arange(0, N_EPISODES, 1)
     plt.plot(Episodes, attacker_r, label='Attacker rewards')

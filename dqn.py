@@ -8,7 +8,6 @@ from collections import deque
 
 class Vanilla_DQN():
     def __init__(self,
-                agent_name,
                 state,
                 action_size,
                 epsilon=1, 
@@ -16,7 +15,6 @@ class Vanilla_DQN():
                 epsilon_min=0.01, 
                 batch_size=32, 
                 discount_factor=0.9):
-        self.agent_name = agent_name
         self.state_size = state.shape[1]
         self.action_size = action_size
         self.epsilon = epsilon
@@ -24,7 +22,7 @@ class Vanilla_DQN():
         self.epsilon_min = epsilon_min
         self.batch_size = batch_size
         self.discount_factor = discount_factor
-        self.checkpoint_path = f"./checkpoints/dqn_vanilla_checkpoint-{agent_name}"
+        self.checkpoint_path = f"./checkpoints/dqn_vanilla_checkpoint"
         self.memory = deque(maxlen=20000)
         self.model = self.create_model()
     
@@ -80,9 +78,13 @@ class Vanilla_DQN():
             final_target[0][action] = target
             self.model.fit(state, final_target, verbose=0)
     
-    def save_checkpoint(self):
-        self.model.save_weights(self.checkpoint_path)
+    def save_checkpoint(self, file_name):
+        self.model.save_weights(f"{self.checkpoint_path}-{file_name}")
+        print("Saving weight to checkpoint")
 
-    def load_checkpoint(self):
-        if os.path.exists(self.checkpoint_path):
-            self.model.load_weights(self.checkpoint_path)
+    def load_checkpoint(self, file_name):
+        if os.path.exists(f"{self.checkpoint_path}-{file_name}"):
+            self.model.load_weights(f"{self.checkpoint_path}-{file_name}")
+            print("Loading existing weight checkpoint")
+        else:
+            print("Weight checkpoint can't be loaded")
