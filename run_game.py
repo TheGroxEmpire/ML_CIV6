@@ -26,6 +26,8 @@ if __name__ == '__main__':
     # --- instantiate agents
     attacker_agent = dqn.Vanilla_DQN(state, 16807)
     defender_agent  = dqn.Vanilla_DQN(state, 343)
+    #attacker_agent = dqn.Dueling_DQN(state, 16807)
+    #defender_agent  = dqn.Dueling_DQN(state, 343)
 
     # --- load checkpoint
     #attacker_agent.load_checkpoint('attacker_v1')
