@@ -566,15 +566,18 @@ class Game():
             # --- Defender agent turn
             defender_action = self.game_handle_moves_ml_ai('defender', defender_action_input)
             for obj in CITY_OBJECTS:
+                # Check to see if the city is dead or not
+                if obj.hp <= 0:
+                    game_quit = True
+                    
+                # Attempt to heal the city otherwise
                 obj.take_turn()
 
             if self.render:
                 draw_game()
 
-            # --- Check to see if the city is dead or not
-            if CITY_OBJECTS[city_loc].hp <= 0:
-                game_quit = True
-
+            
+                
 
         if attacker_action == 'QUIT':
             game_quit = True

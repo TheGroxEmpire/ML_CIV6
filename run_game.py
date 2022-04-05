@@ -1,6 +1,7 @@
 # run_game.py
 # Basic file how to run the game and control it with an AI
 
+import csv
 import time
 import numpy as np
 import game
@@ -9,14 +10,14 @@ import dqn
 
 if __name__ == '__main__':
 
-    # --- Save / load setting
-    enable_save = False
-    enable_load = False
-
+    # --- Load / save setting
+    enable_load = True
+    enable_save = True
+    
     # --- Set up your algorithm here
-    N_EPISODES = 4
-    N_EPISODE_STEPS = 30
-    algorithm_version = '1_Vanilla-DQN'
+    N_EPISODES = 1000
+    N_EPISODE_STEPS = 40
+    algorithm_version = '2_Vanilla-DQN'
 
     # --- Setting up the game environment
     env = game.Game(ml_ai=True, render=True)
@@ -32,14 +33,24 @@ if __name__ == '__main__':
     #attacker_agent = dqn.Dueling_DQN(state, 16807)
     #defender_agent  = dqn.Dueling_DQN(state, 343)
 
-    # --- load saved model
-    if enable_load:
-        attacker_agent.load_model('attacker_v2_Vanilla-DQN_4eps')
-        defender_agent.load_model('defender_v2_Vanilla-DQN_4eps')
-
-    # --- Rewards array for plot
+    # --- Rewards and episodes list for plot. These get turned to numpy array down
     attacker_r = []
     defender_r = []
+    episodes = []
+
+    # --- load saved model
+    if enable_load:
+        attacker_agent.load_model('attacker_v2_Vanilla-DQN')
+        defender_agent.load_model('defender_v2_Vanilla-DQN')
+        try:
+            with open(f"./plots/v{algorithm_version}.csv") as f:
+                lines = list(csv.reader(f))
+            lines = np.array(lines, float)
+            attacker_r, defender_r, episodes = lines[:3]
+            
+            print("Loading plot data")
+        except:
+            print("No plot data to load")
 
     training_start_time = time.time()
     for epoch in range(1, N_EPISODES+1):
@@ -78,25 +89,38 @@ if __name__ == '__main__':
         attacker_agent.replay()
         defender_agent.replay()
         # --- Store latest reward
-        attacker_r.append(attacker_reward)
-        defender_r.append(defender_reward) 
+        attacker_r = np.append(attacker_r, attacker_reward)
+        defender_r = np.append(defender_r, defender_reward) 
         # --- Get end time
         e = time.time()
         print(f"Episode: {epoch}, time spent: {round(e-s, 2)}s")
         
     training_end_time = time.time()
     print(f"Training finished. Total elapsed time: {round(training_end_time-training_start_time, 2)}s")
+    if len(episodes) >- 0:
+        last_index_episode = episodes[-1]
+        episodes = np.arange(1, N_EPISODES+last_index_episode+1, 1)
+    else:
+        episodes = np.arange(1, N_EPISODES+1, 1)
+        
+    # --- Save model and rewards / episode value to plot later
     if enable_save:
-        attacker_agent.save_model(f'attacker_v{algorithm_version}_{N_EPISODES}eps')
-        defender_agent.save_model(f'defender_v{algorithm_version}_{N_EPISODES}eps')
+        attacker_agent.save_model(f'attacker_v{algorithm_version}')
+        defender_agent.save_model(f'defender_v{algorithm_version}')
 
-    Episodes = np.arange(1, N_EPISODES+1, 1)
-    plt.plot(Episodes, attacker_r, label='Attacker rewards')
-    plt.plot(Episodes, defender_r, label='Defender rewards')
+        with open(f"./plots/v{algorithm_version}.csv", 'w', newline='') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(attacker_r)
+            writer.writerow(defender_r)
+            writer.writerow(episodes)
+    
+    plt.plot(episodes, attacker_r, label='Attacker rewards')
+    plt.plot(episodes, defender_r, label='Defender rewards')
     plt.title('Rewards vs Episodes')
     plt.legend()
-    plt.savefig(f"plots/rewards_vs_episodes_v{algorithm_version}_{N_EPISODES}eps.png")
+    plt.savefig(f"plots/rewards_vs_episodes_v{algorithm_version}.png")
     plt.show()
+    
 
             
 
