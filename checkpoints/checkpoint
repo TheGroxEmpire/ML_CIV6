@@ -1,2 +1,0 @@
-model_checkpoint_path: "checkpoint-defender_v1_Dueling-DQN_1000eps"
-all_model_checkpoint_paths: "checkpoint-defender_v1_Dueling-DQN_1000eps"
