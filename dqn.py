@@ -22,7 +22,7 @@ class Vanilla_DQN():
         self.epsilon_min = epsilon_min
         self.batch_size = batch_size
         self.discount_factor = discount_factor
-        self.checkpoint_path = f"./checkpoints/dqn_vanilla_checkpoint"
+        self.checkpoint_path = "./checkpoints/checkpoint"
         self.memory = deque(maxlen=20000)
         self.model = self.create_model()
     
