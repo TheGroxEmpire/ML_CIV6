@@ -1,6 +1,6 @@
-import os
 import numpy as np
 import keras.backend as K
+from keras.models import load_model
 from keras.models import Model
 from keras.layers import Dense, Input, Conv1D, Flatten, Add, Subtract, Lambda
 import random
@@ -22,7 +22,7 @@ class Vanilla_DQN():
         self.epsilon_min = epsilon_min
         self.batch_size = batch_size
         self.discount_factor = discount_factor
-        self.checkpoint_path = "./checkpoints/checkpoint"
+        self.save_path = "./saved_model/"
         self.memory = deque(maxlen=20000)
         self.model = self.create_model()
     
@@ -78,16 +78,16 @@ class Vanilla_DQN():
             final_target[0][action] = target
             self.model.fit(state, final_target, verbose=0)
     
-    def save_checkpoint(self, file_name):
-        self.model.save_weights(f"{self.checkpoint_path}-{file_name}")
-        print("Saving weight to checkpoint")
+    def save_model(self, file_name):
+        self.model.save(f"{self.save_path}{file_name}.h5")
+        print("Saving model")
 
-    def load_checkpoint(self, file_name):
-        if os.path.exists(f"{self.checkpoint_path}-{file_name}"):
-            self.model.load_weights(f"{self.checkpoint_path}-{file_name}")
-            print("Loading existing weight checkpoint")
-        else:
-            print("Weight checkpoint can't be loaded")
+    def load_model(self, file_name):
+        try:
+            self.model = load_model(f"{self.save_path}{file_name}.h5")
+            print("Loading model")
+        except:
+            print("Model can't be loaded")
 
 class Dueling_DQN(Vanilla_DQN):
     def __init__(self,

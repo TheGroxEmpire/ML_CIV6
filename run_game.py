@@ -9,11 +9,14 @@ import dqn
 
 if __name__ == '__main__':
 
+    # --- Save / load setting
+    enable_save = False
+    enable_load = False
 
     # --- Set up your algorithm here
-    N_EPISODES = 1000
-    N_EPISODE_STEPS = 40
-    algorithm_version = '2_Vanilla-DQN'
+    N_EPISODES = 4
+    N_EPISODE_STEPS = 30
+    algorithm_version = '1_Vanilla-DQN'
 
     # --- Setting up the game environment
     env = game.Game(ml_ai=True, render=True)
@@ -29,16 +32,17 @@ if __name__ == '__main__':
     #attacker_agent = dqn.Dueling_DQN(state, 16807)
     #defender_agent  = dqn.Dueling_DQN(state, 343)
 
-    # --- load checkpoint
-    #attacker_agent.load_checkpoint('attacker_v1')
-    #defender_agent.load_checkpoint('defender_v1')
+    # --- load saved model
+    if enable_load:
+        attacker_agent.load_model('attacker_v2_Vanilla-DQN_4eps')
+        defender_agent.load_model('defender_v2_Vanilla-DQN_4eps')
 
     # --- Rewards array for plot
     attacker_r = []
     defender_r = []
 
     training_start_time = time.time()
-    for epoch in range(N_EPISODES):
+    for epoch in range(1, N_EPISODES+1):
 
         # --- Initialize the game by putting units and city on the playing field, etc.
         env.game_initialize(ep_number=epoch)
@@ -55,6 +59,8 @@ if __name__ == '__main__':
             defender_action = defender_agent.act(state)
 
             # --- Perform that action in the environment
+            #print(f"Attacker action: {attacker_action}")
+            #print(f"Defender action: {defender_action}")
             next_state, attacker_reward, defender_reward, done = env.step(attacker_action, defender_action)
             
             # --- Store state and action into memory
@@ -80,9 +86,11 @@ if __name__ == '__main__':
         
     training_end_time = time.time()
     print(f"Training finished. Total elapsed time: {round(training_end_time-training_start_time, 2)}s")
-    defender_agent.save_checkpoint(f'attacker_v{algorithm_version}_{N_EPISODES}eps')
-    attacker_agent.save_checkpoint(f'defender_v{algorithm_version}_{N_EPISODES}eps')
-    Episodes = np.arange(0, N_EPISODES, 1)
+    if enable_save:
+        attacker_agent.save_model(f'attacker_v{algorithm_version}_{N_EPISODES}eps')
+        defender_agent.save_model(f'defender_v{algorithm_version}_{N_EPISODES}eps')
+
+    Episodes = np.arange(1, N_EPISODES+1, 1)
     plt.plot(Episodes, attacker_r, label='Attacker rewards')
     plt.plot(Episodes, defender_r, label='Defender rewards')
     plt.title('Rewards vs Episodes')
