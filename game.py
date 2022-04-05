@@ -238,9 +238,6 @@ class C_City(C_Sprite):
                 self.status = 'healed'
                 if self.hp > self.hp_max:
                     self.hp = self.hp_max
-            else:
-                self.status = 'healing blocked'
-                #print(f'Three units are surrounding the city')
 
 
     def take_damage(self,
@@ -587,8 +584,7 @@ class Game():
         defender_reward += self.get_rewards('defender')
 
         # --- Agent reward for the turn
-        attacker_reward -= 1
-        defender_reward += 1
+        attacker_reward -= 0.5
 
         #CLOCK.tick(constants.GAME_FPS)
 
@@ -601,8 +597,6 @@ class Game():
 
         own_objects = {'attacker': ATTACKER_OBJECTS,
                         'defender': DEFENDER_OBJECTS}
-        opponent_objects = {'attacker': DEFENDER_OBJECTS,
-                            'defender': ATTACKER_OBJECTS}
         reward = 0
 
         
@@ -618,16 +612,13 @@ class Game():
                             obj[1].status = obj[1].status_default
                         elif obj[1].status == 'healed':
                             reward -= 0.3
-                            obj[1].status = obj[1].status_default
-                        elif obj[1].status == 'healing blocked':
-                            reward += 0.5
-                            obj[1].status = obj[1].status_default                
+                            obj[1].status = obj[1].status_default             
 
         # --- REWARDS for own unit status
         for obj in own_objects[team]:
             #print('BEFORE: {} status of {}'.format(obj.name_instance, obj.status))
             if obj.status == 'dead':
-                reward -= 2
+                reward -= 1
                 obj.status = None
             elif obj.status == 'took damage':
                 reward += 0
@@ -649,11 +640,18 @@ class Game():
             reward -= dist_reward / 0.5
         
         # --- REWARDS for opponent unit status
-        for obj in opponent_objects[team]:
-            #print('BEFORE: {} status of {}'.format(obj.name_instance, obj.status))
-            if obj.status == 'dead':
-                reward += 2
-                obj.status = None
+        if team == 'defender':
+            for obj in ATTACKER_OBJECTS:
+                #print('BEFORE: {} status of {}'.format(obj.name_instance, obj.status))
+                if obj.status == 'dead':
+                    reward += 1
+                    obj.status = None
+        else:
+            for obj in DEFENDER_OBJECTS:
+                #print('BEFORE: {} status of {}'.format(obj.name_instance, obj.status))
+                if obj.status == 'dead':
+                    reward += 0.5
+                    obj.status = None
 
 
         return reward

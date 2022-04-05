@@ -13,7 +13,7 @@ if __name__ == '__main__':
     # --- Set up your algorithm here
     N_EPISODES = 1000
     N_EPISODE_STEPS = 40
-    algorithm_version = '1_Vanilla-DQN'
+    algorithm_version = '2_Vanilla-DQN'
 
     # --- Setting up the game environment
     env = game.Game(ml_ai=True, render=True)
