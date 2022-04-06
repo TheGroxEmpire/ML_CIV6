@@ -551,7 +551,8 @@ class Game():
         # --- agent action definition
         attacker_action = 'no-action'
         defender_action = 'no-action'
-        game_quit = False
+        game_quit_attacker = False
+        game_quit_defender = False
         attacker_reward = 0
         defender_reward = 0
 
@@ -560,16 +561,21 @@ class Game():
             city_loc = obj[0]
 
 
-        if self.ml_ai and not game_quit:
+        if self.ml_ai and not (game_quit_attacker or game_quit_defender):
             # --- Attacker agent turn
             attacker_action = self.game_handle_moves_ml_ai('attacker', attacker_action_input)
             # --- Defender agent turn
             defender_action = self.game_handle_moves_ml_ai('defender', defender_action_input)
+            for obj in ATTACKER_OBJECTS:
+                # Check if all attackers unit are dead or not
+                if obj.hp > 0:
+                    break
+                game_quit_defender = True
             for obj in CITY_OBJECTS:
                 # Check to see if the city is dead or not
                 if obj.hp <= 0:
-                    game_quit = True
-                    
+                    game_quit_attacker = True
+
                 # Attempt to heal the city otherwise
                 obj.take_turn()
 
@@ -580,8 +586,9 @@ class Game():
                 
 
         if attacker_action == 'QUIT':
-            game_quit = True
-
+            game_quit_attacker = True
+        elif defender_action == 'QUIT':
+            game_quit_defender
         # --- Get rewards after the city attacks, in case a unit dies
         attacker_reward += self.get_rewards('attacker')
         defender_reward += self.get_rewards('defender')
@@ -591,7 +598,7 @@ class Game():
 
         #CLOCK.tick(constants.GAME_FPS)
 
-        return self.get_observation(), attacker_reward, defender_reward, game_quit
+        return self.get_observation(), attacker_reward, defender_reward, game_quit_attacker, game_quit_defender
 
     def get_rewards(self, team):
         '''This definition will return the attacker agent reward status for each step as
@@ -615,7 +622,7 @@ class Game():
                             obj[1].status = obj[1].status_default
                         elif obj[1].status == 'healed':
                             reward -= 0.3
-                            obj[1].status = obj[1].status_default             
+                            obj[1].status = obj[1].status_default          
 
         # --- REWARDS for own unit status
         for obj in own_objects[team]:
@@ -636,11 +643,12 @@ class Game():
                 reward += 0.2
                 obj.status = obj.status_default
 
-            # --- Rewards for how far they are away from the city!
-            # - This is a linear reward, 0 for being next to city, -0.5 for maximum distance, per unit
-            dist = hex_distance([obj.x, obj.y], [CITY_OBJECTS[city_loc].x,CITY_OBJECTS[city_loc].y])
-            dist_reward = float(dist - 1) / (max([constants.MAP_HEIGHT, constants.MAP_WIDTH]) - 2)
-            reward -= dist_reward / 0.5
+            if team == 'attacker':
+                # --- Rewards for how far they are away from the city!
+                # - This is a linear reward, 0 for being next to city, -0.5 for maximum distance, per unit
+                dist = hex_distance([obj.x, obj.y], [CITY_OBJECTS[city_loc].x,CITY_OBJECTS[city_loc].y])
+                dist_reward = float(dist - 1) / (max([constants.MAP_HEIGHT, constants.MAP_WIDTH]) - 2)
+                reward -= dist_reward / 0.5
         
         # --- REWARDS for opponent unit status
         if team == 'defender':
@@ -648,12 +656,6 @@ class Game():
                 #print('BEFORE: {} status of {}'.format(obj.name_instance, obj.status))
                 if obj.status == 'dead':
                     reward += 1
-                    obj.status = None
-        else:
-            for obj in DEFENDER_OBJECTS:
-                #print('BEFORE: {} status of {}'.format(obj.name_instance, obj.status))
-                if obj.status == 'dead':
-                    reward += 0.5
                     obj.status = None
 
 
