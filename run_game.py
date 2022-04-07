@@ -15,35 +15,42 @@ if __name__ == '__main__':
     enable_save = True
     
     # --- Set up your algorithm here
-    N_EPISODES = 4996
-    N_EPISODE_STEPS = 50
-    algorithm_version = '2_Vanilla-DQN'
+    N_EPISODES = 2
+    N_EPISODE_STEPS = 30
+    '''Algorithm list:
+        - Vanilla-DQN
+        - Dueling-DQN
+    '''
+    algorithm_version = 'Dueling-DQN'
 
     # --- Setting up the game environment
     env = game.Game(ml_ai=True, render=True)
     env.game_initialize(ep_number=0)
+
     # --- Get the current state of the game by calling get_observation_X
     # FORMAT: city health, dx unit 1, dy unit 1, hp_norm unit 1, dx unit 2, dy unit 2, hp_norm unit 2, ...
     # with three units this will be a list of length 10
     state = env.get_observation()
-
-    # --- instantiate agents
-    attacker_agent = dqn.Vanilla_DQN(state, 16807)
-    defender_agent  = dqn.Vanilla_DQN(state, 343)
-    #attacker_agent = dqn.Dueling_DQN(state, 16807)
-    #defender_agent  = dqn.Dueling_DQN(state, 343)
-
+    
     # --- Data list for plot. These get turned to numpy array down
     attacker_r = []
     defender_r = []
     episodes = []
 
+    # --- instantiate agents
+    algorithm_dict = {
+        'Vanilla-DQN': dqn.Vanilla_DQN,
+        'Dueling-DQN': dqn.Dueling_DQN
+    }
+    # For attacker (5 units) it is one of 16807 possibilities (7^5)
+    attacker_agent = algorithm_dict[algorithm_version](state, 16807)
+    # For defender (3 units) it is one of 343 possibilities (7^3)
+    defender_agent  = algorithm_dict[algorithm_version](state, 343)   
+
     # --- load saved model
     if enable_load:
-        attacker_agent.load_model('attacker_v2_Vanilla-DQN')
-        defender_agent.load_model('defender_v2_Vanilla-DQN')
         try:
-            with open(f"./plots/v{algorithm_version}.csv") as f:
+            with open(f"./plots/{algorithm_version}.csv") as f:
                 lines = list(csv.reader(f))
             lines = np.array(lines, float)
             attacker_r, defender_r, episodes = lines[:3]
@@ -53,8 +60,11 @@ if __name__ == '__main__':
         except:
             print("No save data to load")
             cumulative_episodes = 0
+
+        attacker_agent.load_model(f'attacker_{algorithm_version}')
+        defender_agent.load_model(f'defender_{algorithm_version}')
     else:
-        cumulative_episodes = 0     
+        cumulative_episodes = 0 
 
     training_start_time = time.time()
     episode_start = cumulative_episodes+1
@@ -70,9 +80,7 @@ if __name__ == '__main__':
         for step in range(N_EPISODE_STEPS):
 
             # --- Determine what action to take. 
-            # For 5 units it is one of 16807 possibilities (7^5)
             attacker_action = attacker_agent.act(state)
-            # For 3 units it is one of 343 possibilities (7^3)
             defender_action = defender_agent.act(state)
 
             # --- Perform that action in the environment
@@ -102,10 +110,10 @@ if __name__ == '__main__':
         episodes = np.append(episodes, epoch)
         # --- Save model and rewards / episode value every 10 episodes or at the last episode
         if enable_save and epoch % 10 == 0 or epoch == episode_end-1:
-            attacker_agent.save_model(f'attacker_v{algorithm_version}')
-            defender_agent.save_model(f'defender_v{algorithm_version}')
+            attacker_agent.save_model(f'attacker_{algorithm_version}')
+            defender_agent.save_model(f'defender_{algorithm_version}')
 
-            with open(f"./plots/v{algorithm_version}.csv", 'w', newline='') as csvfile:
+            with open(f"./plots/{algorithm_version}.csv", 'w', newline='') as csvfile:
                 writer = csv.writer(csvfile)
                 writer.writerow(attacker_r)
                 writer.writerow(defender_r)
@@ -118,9 +126,10 @@ if __name__ == '__main__':
     plt.plot(episodes, defender_r, label='Defender rewards')
     plt.title('Rewards vs Episodes')
     plt.legend() 
-    plt.show()
     if enable_save:
-        plt.savefig(f"plots/rewards_vs_episodes_v{algorithm_version}.png")
+        plt.savefig(f"plots/rewards_vs_episodes_{algorithm_version}.png")
+
+    plt.show()
 
     
 

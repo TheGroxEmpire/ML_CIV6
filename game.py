@@ -566,14 +566,15 @@ class Game():
             attacker_action = self.game_handle_moves_ml_ai('attacker', attacker_action_input)
             # --- Defender agent turn
             defender_action = self.game_handle_moves_ml_ai('defender', defender_action_input)
-            for obj in ATTACKER_OBJECTS:
-                # Check if all attackers unit are dead or not
-                if obj.hp > 0:
-                    break
+            all_attacker_dead = all(obj.hp <= 0 for obj in ATTACKER_OBJECTS)
+            if all_attacker_dead:
+                print("All attacker units are dead")
                 game_quit_defender = True
+                
             for obj in CITY_OBJECTS:
                 # Check to see if the city is dead or not
                 if obj.hp <= 0:
+                    print("City is destroyed")
                     game_quit_attacker = True
 
                 # Attempt to heal the city otherwise

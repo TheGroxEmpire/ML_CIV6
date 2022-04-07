@@ -1,3 +1,4 @@
+import dill
 import numpy as np
 import keras.backend as K
 from keras.models import load_model
@@ -79,15 +80,25 @@ class Vanilla_DQN():
             self.model.fit(state, final_target, verbose=0)
     
     def save_model(self, file_name):
-        self.model.save(f"{self.save_path}{file_name}.h5")
-        print("Saving model")
+        try:
+            self.model.save(f"{self.save_path}{file_name}")
+            with open(f"{self.save_path}{file_name}\parameters.pkl", 'wb') as f:
+                dill.dump([self.epsilon, self.epsilon_decay, self.epsilon_min,
+                self.discount_factor, self.memory, self.batch_size], f)
+        except:
+            print("Failed to save model")
+
 
     def load_model(self, file_name):
         try:
-            self.model = load_model(f"{self.save_path}{file_name}.h5")
+            self.model = load_model(f"{self.save_path}{file_name}")
+            with open(f"{self.save_path}{file_name}\parameters.pkl", 'rb') as f:
+                self.epsilon, self.epsilon_decay, self.epsilon_min, self.discount_factor, self.memory, self.batch_size = dill.load(f)
             print("Loading model")
         except:
             print("Model can't be loaded")
+
+       
 
 class Dueling_DQN(Vanilla_DQN):
     def __init__(self,
