@@ -135,4 +135,3 @@ class Dueling_DQN(Vanilla_DQN):
         model.compile(optimizer="adam", loss="mse")
 
         return model
-

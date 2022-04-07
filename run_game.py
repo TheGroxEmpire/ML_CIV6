@@ -15,7 +15,7 @@ if __name__ == '__main__':
     enable_save = True
     
     # --- Set up your algorithm here
-    N_EPISODES = 2
+    N_EPISODES = 500000
     N_EPISODE_STEPS = 30
     '''Algorithm list:
         - Vanilla-DQN
@@ -24,7 +24,7 @@ if __name__ == '__main__':
     algorithm_version = 'Dueling-DQN'
 
     # --- Setting up the game environment
-    env = game.Game(ml_ai=True, render=True)
+    env = game.Game(ml_ai=True, render=False)
     env.game_initialize(ep_number=0)
 
     # --- Get the current state of the game by calling get_observation_X
@@ -32,7 +32,7 @@ if __name__ == '__main__':
     # with three units this will be a list of length 10
     state = env.get_observation()
     
-    # --- Data list for plot. These get turned to numpy array down
+    # --- Data list for plot. These get turned to numpy array
     attacker_r = []
     defender_r = []
     episodes = []
@@ -54,7 +54,7 @@ if __name__ == '__main__':
                 lines = list(csv.reader(f))
             lines = np.array(lines, float)
             attacker_r, defender_r, episodes = lines[:3]
-            # Cumulative episodes is number of episode from previous load. If there's nothing to load, start at 0
+            # Cumulative episodes is the number of episode from previous load. If there's nothing to load, start at 0
             cumulative_episodes = int(episodes[-1])
             print("Continuing from last save data")
         except:
@@ -98,7 +98,7 @@ if __name__ == '__main__':
             if done_attacker or done_defender:
                 break
 
-        # --- Experience replay
+        # --- Replay the agent past experience
         attacker_agent.replay()
         defender_agent.replay()
         # --- Store latest reward
@@ -108,7 +108,7 @@ if __name__ == '__main__':
         e = time.time()
         print(f"Episode: {epoch}, time spent: {round(e-s, 2)}s")
         episodes = np.append(episodes, epoch)
-        # --- Save model and rewards / episode value every 10 episodes or at the last episode
+        # --- Save model and data value every 10 episodes or at the last episode
         if enable_save and epoch % 10 == 0 or epoch == episode_end-1:
             attacker_agent.save_model(f'attacker_{algorithm_version}')
             defender_agent.save_model(f'defender_{algorithm_version}')
