@@ -67,7 +67,7 @@ class Vanilla_DQN():
         experience replay. find the q-value and train the neural network model with state as input and q-values as targets
         :return:
         """
-        
+
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
         batch = random.choices(self.memory,k=self.batch_size)
@@ -85,6 +85,7 @@ class Vanilla_DQN():
             with open(f"{self.save_path}{file_name}\parameters.pkl", 'wb') as f:
                 dill.dump([self.epsilon, self.epsilon_decay, self.epsilon_min,
                 self.discount_factor, self.memory, self.batch_size], f)
+            print("Saving model")
         except:
             print("Failed to save model")
 
