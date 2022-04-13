@@ -608,6 +608,8 @@ class Game():
 
         own_objects = {'attacker': ATTACKER_OBJECTS,
                         'defender': DEFENDER_OBJECTS}
+        enemy_objects = {'attacker': DEFENDER_OBJECTS,
+                        'defender': ATTACKER_OBJECTS}
         reward = 0
 
         
@@ -628,7 +630,7 @@ class Game():
         # --- REWARDS for own unit status
         for obj in own_objects[team]:
             #print('BEFORE: {} status of {}'.format(obj.name_instance, obj.status))
-            if obj.status == 'dead':
+            if obj.status == 'dead' and team == 'attacker':
                 reward -= 1
                 obj.status = None
             elif obj.status == 'took damage':
@@ -652,8 +654,7 @@ class Game():
                 reward -= dist_reward / 0.5
         
         # --- REWARDS for opponent unit status
-        if team == 'defender':
-            for obj in ATTACKER_OBJECTS:
+            for obj in enemy_objects[team]:
                 #print('BEFORE: {} status of {}'.format(obj.name_instance, obj.status))
                 if obj.status == 'dead':
                     reward += 1
@@ -665,9 +666,6 @@ class Game():
     def get_observation(self):
         '''Definition returns the known universe
         positions of each unit and each city
-        TODO:
-        1) current health of each unit/city
-        2) current strength of each unit/city
         '''
 
         global GAME_OBJECTS

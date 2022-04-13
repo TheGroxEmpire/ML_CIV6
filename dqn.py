@@ -1,6 +1,7 @@
 import dill
 import numpy as np
 import keras.backend as K
+from keras.metrics import MeanSquaredError
 from keras.models import load_model
 from keras.models import Model
 from keras.layers import Dense, Input, Conv1D, Flatten, Add, Subtract, Lambda
@@ -24,15 +25,15 @@ class Vanilla_DQN():
         self.batch_size = batch_size
         self.discount_factor = discount_factor
         self.save_path = "./saved_model/"
-        self.memory = deque(maxlen=20000)
+        self.memory = deque(maxlen=1000000)
         self.model = self.create_model()
     
     def create_model(self):
         """Create vanilla DQN model"""
         input = Input(shape=(self.state_size))
 
-        out = Dense(32, activation='relu')(input)
-        out = Dense(32, activation='relu')(out)
+        out = Dense(512, activation='relu')(input)
+        out = Dense(512, activation='relu')(out)
         out = Dense(self.action_size, activation='linear')(out)
 
         model = Model(inputs=input, outputs=out)
@@ -81,11 +82,12 @@ class Vanilla_DQN():
     
     def save_model(self, file_name):
         try:
+            print("Saving model, do not terminate the program")
             self.model.save(f"{self.save_path}{file_name}")
             with open(f"{self.save_path}{file_name}\parameters.pkl", 'wb') as f:
                 dill.dump([self.epsilon, self.epsilon_decay, self.epsilon_min,
                 self.discount_factor, self.memory, self.batch_size], f)
-            print("Saving model")
+            print("Model saved")
         except:
             print("Failed to save model")
 
@@ -123,9 +125,9 @@ class Dueling_DQN(Vanilla_DQN):
         """Create Dueling DQN model"""
         input = Input(shape=(self.state_size))
 
-        value = Dense(8, activation="relu")(input)
+        value = Dense(512, activation="relu")(input)
         value = Dense(1, activation="relu")(value)
-        advantage = Dense(8, activation="relu")(input)
+        advantage = Dense(512, activation="relu")(input)
         advantage = Dense(self.action_size, activation="relu")(advantage)
         advantage_mean = Lambda(lambda x: K.mean(x, axis=1))(advantage)
         advantage = Subtract()([advantage, advantage_mean])

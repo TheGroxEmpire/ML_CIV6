@@ -53,9 +53,10 @@ if __name__ == '__main__':
             with open(f"./plots/{algorithm_version}.csv") as f:
                 lines = list(csv.reader(f))
             lines = np.array(lines, float)
-            attacker_r, defender_r, episodes = lines[:3]
+            attacker_r, defender_r = lines[:2]
+            episodes = len(attacker_r)
             # Cumulative episodes is the number of episode from previous load. If there's nothing to load, start at 0
-            cumulative_episodes = int(episodes[-1])
+            cumulative_episodes = episodes
             print("Continuing from last save data")
         except:
             print("No save data to load")
@@ -107,9 +108,8 @@ if __name__ == '__main__':
         # --- Get end time
         e = time.time()
         print(f"Episode: {epoch}, time spent: {round(e-s, 2)}s")
-        episodes = np.append(episodes, epoch)
         # --- Save model and data value every 10 episodes or at the last episode
-        if enable_save and epoch % 10 == 0 or epoch == episode_end-1:
+        if enable_save and (epoch % 10 == 0 or epoch == episode_end-1):
             attacker_agent.save_model(f'attacker_{algorithm_version}')
             defender_agent.save_model(f'defender_{algorithm_version}')
 
@@ -117,11 +117,11 @@ if __name__ == '__main__':
                 writer = csv.writer(csvfile)
                 writer.writerow(attacker_r)
                 writer.writerow(defender_r)
-                writer.writerow(episodes)
         
     training_end_time = time.time()
     print(f"Training finished. Total elapsed time: {round(training_end_time-training_start_time, 2)}s")
-        
+
+    # --- Rewards vs episode plot
     plt.plot(episodes, attacker_r, label='Attacker rewards')
     plt.plot(episodes, defender_r, label='Defender rewards')
     plt.title('Rewards vs Episodes')
