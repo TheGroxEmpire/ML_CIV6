@@ -57,13 +57,12 @@ if __name__ == '__main__':
             episodes = len(attacker_r)
             # Cumulative episodes is the number of episode from previous load. If there's nothing to load, start at 0
             cumulative_episodes = episodes
+            attacker_agent.load_model(f'attacker_{algorithm_version}')
+            defender_agent.load_model(f'defender_{algorithm_version}')
             print("Continuing from last save data")
         except:
             print("No save data to load")
             cumulative_episodes = 0
-
-        attacker_agent.load_model(f'attacker_{algorithm_version}')
-        defender_agent.load_model(f'defender_{algorithm_version}')
     else:
         cumulative_episodes = 0 
 
