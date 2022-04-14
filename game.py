@@ -527,6 +527,7 @@ class Game():
             if self.render:
                 draw_game()
 
+            #CLOCK = pygame.time.Clock()
             #CLOCK.tick(constants.GAME_FPS)
 
         if self.render:
@@ -596,7 +597,7 @@ class Game():
 
         # --- Agent reward for the turn
         attacker_reward -= 0.5
-
+        #CLOCK = pygame.time.Clock()
         #CLOCK.tick(constants.GAME_FPS)
 
         return self.get_observation(), attacker_reward, defender_reward, game_quit_attacker, game_quit_defender
@@ -715,7 +716,6 @@ class Game():
 
         episode_number = ep_number
         TURN_NUMBER = 0
-        #CLOCK = pygame.time.Clock()
 
         # --- Set sufrace dimensions
         if self.render:

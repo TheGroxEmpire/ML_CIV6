@@ -46,7 +46,7 @@ MAP_WIDTH = 8
 MAP_HEIGHT = 8
 
 # FPS LIMIT
-GAME_FPS = 10
+GAME_FPS = 1
 
 # --- Main dictionary to determine movement direction
 directions = ['NE', 'E', 'SE', 'SW', 'W', 'NW', 'SPACE']

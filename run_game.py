@@ -15,7 +15,7 @@ if __name__ == '__main__':
     enable_save = True
     
     # --- Set up your algorithm here
-    N_EPISODES = 500000
+    N_EPISODES = 100000
     N_EPISODE_STEPS = 30
     '''Algorithm list:
         - Vanilla-DQN
@@ -122,6 +122,7 @@ if __name__ == '__main__':
     print(f"Training finished. Total elapsed time: {round(training_end_time-training_start_time, 2)}s")
 
     # --- Rewards vs episode plot
+    episodes = np.arange(0, episodes+1)
     plt.plot(episodes, attacker_r, label='Attacker rewards')
     plt.plot(episodes, defender_r, label='Defender rewards')
     plt.title('Rewards vs Episodes')

@@ -25,7 +25,7 @@ class Vanilla_DQN():
         self.batch_size = batch_size
         self.discount_factor = discount_factor
         self.save_path = "./saved_model/"
-        self.memory = deque(maxlen=1000000)
+        self.memory = deque(maxlen=100000)
         self.model = self.create_model()
     
     def create_model(self):
