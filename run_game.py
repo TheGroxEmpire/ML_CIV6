@@ -15,13 +15,13 @@ if __name__ == '__main__':
     enable_save = True
     
     # --- Set up your algorithm here
-    N_EPISODES = 100000
+    N_EPISODES = 10
     N_EPISODE_STEPS = 30
     '''Algorithm list:
         - Vanilla-DQN
         - Dueling-DQN
     '''
-    algorithm_version = 'Dueling-DQN'
+    algorithm_version = 'Vanilla-DQN'
 
     # --- Setting up the game environment
     env = game.Game(ml_ai=True, render=False)
@@ -54,9 +54,8 @@ if __name__ == '__main__':
                 lines = list(csv.reader(f))
             lines = np.array(lines, float)
             attacker_r, defender_r = lines[:2]
-            episodes = len(attacker_r)
             # Cumulative episodes is the number of episode from previous load. If there's nothing to load, start at 0
-            cumulative_episodes = episodes
+            cumulative_episodes = len(attacker_r)
             attacker_agent.load_model(f'attacker_{algorithm_version}')
             defender_agent.load_model(f'defender_{algorithm_version}')
             print("Continuing from last save data")
@@ -121,7 +120,8 @@ if __name__ == '__main__':
     print(f"Training finished. Total elapsed time: {round(training_end_time-training_start_time, 2)}s")
 
     # --- Rewards vs episode plot
-    episodes = np.arange(0, episodes+1)
+    episodes = len(attacker_r)
+    episodes = np.arange(1, episodes+1)
     plt.plot(episodes, attacker_r, label='Attacker rewards')
     plt.plot(episodes, defender_r, label='Defender rewards')
     plt.title('Rewards vs Episodes')
