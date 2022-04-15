@@ -552,17 +552,11 @@ class Game():
         # --- agent action definition
         attacker_action = 'no-action'
         defender_action = 'no-action'
-        game_quit_attacker = False
-        game_quit_defender = False
+        game_quit = False
         attacker_reward = 0
         defender_reward = 0
 
-        # --- Check for the city location
-        for obj in enumerate(CITY_OBJECTS):
-            city_loc = obj[0]
-
-
-        if self.ml_ai and not (game_quit_attacker or game_quit_defender):
+        if self.ml_ai and not game_quit:
             # --- Attacker agent turn
             attacker_action = self.game_handle_moves_ml_ai('attacker', attacker_action_input)
             # --- Defender agent turn
@@ -570,37 +564,34 @@ class Game():
             all_attacker_dead = all(obj.hp <= 0 for obj in ATTACKER_OBJECTS)
             if all_attacker_dead:
                 print("All attacker units are dead")
-                game_quit_defender = True
+                game_quit = True
                 
             for obj in CITY_OBJECTS:
                 # Check to see if the city is dead or not
                 if obj.hp <= 0:
                     print("City is destroyed")
-                    game_quit_attacker = True
+                    game_quit = True
 
                 # Attempt to heal the city otherwise
                 obj.take_turn()
 
             if self.render:
-                draw_game()
+                draw_game()         
 
-            
-                
+        if attacker_action == 'QUIT' or defender_action == 'quit':
+            game_quit = True
 
-        if attacker_action == 'QUIT':
-            game_quit_attacker = True
-        elif defender_action == 'QUIT':
-            game_quit_defender
         # --- Get rewards after the city attacks, in case a unit dies
         attacker_reward += self.get_rewards('attacker')
         defender_reward += self.get_rewards('defender')
 
         # --- Agent reward for the turn
         attacker_reward -= 0.5
+        
         #CLOCK = pygame.time.Clock()
         #CLOCK.tick(constants.GAME_FPS)
 
-        return self.get_observation(), attacker_reward, defender_reward, game_quit_attacker, game_quit_defender
+        return self.get_observation(), attacker_reward, defender_reward, game_quit
 
     def get_rewards(self, team):
         '''This definition will return the attacker agent reward status for each step as

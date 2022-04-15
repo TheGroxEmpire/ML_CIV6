@@ -86,16 +86,16 @@ if __name__ == '__main__':
             # --- Perform that action in the environment
             #print(f"Attacker action: {attacker_action}, turn: {step}")
             #print(f"Defender action: {defender_action}, turn: {step}")
-            next_state, attacker_reward, defender_reward, done_attacker, done_defender = env.step(attacker_action, defender_action)
+            next_state, attacker_reward, defender_reward, done = env.step(attacker_action, defender_action)
             
             # --- Store state and action into memory
-            attacker_agent.remember(state, next_state, attacker_action, attacker_reward, done_attacker)
-            defender_agent.remember(state, next_state, defender_action, defender_reward, done_defender)
+            attacker_agent.remember(state, next_state, attacker_action, attacker_reward, done)
+            defender_agent.remember(state, next_state, defender_action, defender_reward, done)
             
             # --- Update the current state of the game
             state = next_state      
             # --- Break the step loop if the game is done, aka the city is dead
-            if done_attacker or done_defender:
+            if done:
                 break
 
         # --- Replay the agent past experience
