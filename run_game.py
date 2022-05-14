@@ -12,16 +12,16 @@ if __name__ == '__main__':
 
     # --- Load / save setting
     enable_load = True
-    enable_save = True
+    enable_save = False
     
     # --- Set up your algorithm here
-    N_EPISODES = 10
+    N_EPISODES = 100000
     N_EPISODE_STEPS = 30
     '''Algorithm list:
         - Vanilla-DQN
         - Dueling-DQN
     '''
-    algorithm_version = 'Vanilla-DQN'
+    algorithm_version = 'Dueling-DQN'
 
     # --- Setting up the game environment
     env = game.Game(ml_ai=True, render=False)
@@ -30,8 +30,8 @@ if __name__ == '__main__':
     # --- Get the current state of the game by calling get_observation_X
     # FORMAT: city health, dx unit 1, dy unit 1, hp_norm unit 1, dx unit 2, dy unit 2, hp_norm unit 2, ...
     # with three units this will be a list of length 10
-    state = env.get_observation()
-    
+    state = np.array(env.get_observation())
+
     # --- Data list for plot. These get turned to numpy array
     attacker_r = []
     defender_r = []
@@ -43,9 +43,9 @@ if __name__ == '__main__':
         'Dueling-DQN': dqn.Dueling_DQN
     }
     # For attacker (5 units) it is one of 16807 possibilities (7^5)
-    attacker_agent = algorithm_dict[algorithm_version](state, 16807)
+    attacker_agent = algorithm_dict[algorithm_version](state, np.array(16807))
     # For defender (3 units) it is one of 343 possibilities (7^3)
-    defender_agent  = algorithm_dict[algorithm_version](state, 343)   
+    defender_agent  = algorithm_dict[algorithm_version](state, np.array(343))   
 
     # --- load saved model
     if enable_load:
@@ -72,7 +72,7 @@ if __name__ == '__main__':
 
         # --- Initialize the game by putting units and city on the playing field, etc.
         env.game_initialize(ep_number=epoch)
-        state = env.get_observation()
+        state = np.array(env.get_observation())
 
         # --- Get start time
         s = time.time()
@@ -92,7 +92,7 @@ if __name__ == '__main__':
             defender_agent.remember(state, next_state, defender_action, defender_reward, done)
             
             # --- Update the current state of the game
-            state = next_state      
+            state = np.array(next_state)      
             # --- Break the step loop if the game is done, aka the city is dead
             if done:
                 break
@@ -107,7 +107,7 @@ if __name__ == '__main__':
         e = time.time()
         print(f"Episode: {epoch}, time spent: {round(e-s, 2)}s")
         # --- Save model and data value every 10 episodes or at the last episode
-        if enable_save and (epoch % 10 == 0 or epoch == episode_end-1):
+        if enable_save and (epoch % 100 == 0 or epoch == episode_end-1):
             attacker_agent.save_model(f'attacker_{algorithm_version}')
             defender_agent.save_model(f'defender_{algorithm_version}')
 
