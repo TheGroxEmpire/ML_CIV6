@@ -6,23 +6,25 @@ import time
 import numpy as np
 import game
 import matplotlib.pyplot as plt
-import drl
+import ppo
+import dqn
+import dueling_ddqn
 
 if __name__ == '__main__':
 
     # --- Load / save setting
     enable_load = False
-    enable_save = False
+    enable_save = True
     
     # --- Set up your algorithm here
-    N_EPISODES = 100000
+    N_EPISODES = 100
     N_EPISODE_STEPS = 30
     '''Algorithm list:
-        - Vanilla-DQN
-        - Dueling-DQN
-        - PPO
+        - dqn
+        - dueling_ddqn
+        - ppo
     '''
-    algorithm_version = 'PPO'
+    algorithm_version = 'dqn'
 
     # --- Setting up the game environment
     env = game.Game(ml_ai=True, render=False)
@@ -40,9 +42,9 @@ if __name__ == '__main__':
 
     # --- instantiate agents
     algorithm_dict = {
-        'Vanilla-DQN': drl.Vanilla_DQN,
-        'Dueling-DQN': drl.Dueling_DQN,
-        'PPO': drl.PPO
+        'dqn': dqn.Agent,
+        'dueling_ddqn': dueling_ddqn.Agent,
+        'ppo': ppo.Agent
     }
     # For attacker (5 units) it is one of 16807 possibilities (7^5)
     attacker_agent = algorithm_dict[algorithm_version](state, 16807)
@@ -108,7 +110,7 @@ if __name__ == '__main__':
         # --- Get end time
         e = time.time()
         print(f"Episode: {epoch}, time spent: {round(e-s, 2)}s")
-        # --- Save model and data value every 10 episodes or at the last episode
+        # --- Save model and data value every 100 episodes or at the last episode
         if enable_save and (epoch % 100 == 0 or epoch == episode_end-1):
             attacker_agent.save_model(f'attacker_{algorithm_version}')
             defender_agent.save_model(f'defender_{algorithm_version}')

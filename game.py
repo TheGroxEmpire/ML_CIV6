@@ -684,7 +684,7 @@ class Game():
                 # --- Normalized HP
                 observation.append(obj.hp / obj.hp_max)
         
-        return np.array(observation).reshape(1, -1)
+        return np.array(observation)
 
     def get_current_state(self):
         """Use this to get unit position as well as health, used for rendering in Blender"""
