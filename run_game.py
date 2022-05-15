@@ -6,7 +6,7 @@ import time
 import numpy as np
 import game
 import matplotlib.pyplot as plt
-import dqn
+import drl
 
 if __name__ == '__main__':
 
@@ -39,8 +39,8 @@ if __name__ == '__main__':
 
     # --- instantiate agents
     algorithm_dict = {
-        'Vanilla-DQN': dqn.Vanilla_DQN,
-        'Dueling-DQN': dqn.Dueling_DQN
+        'Vanilla-DQN': drl.Vanilla_DQN,
+        'Dueling-DQN': drl.Dueling_DQN
     }
     # For attacker (5 units) it is one of 16807 possibilities (7^5)
     attacker_agent = algorithm_dict[algorithm_version](state, np.array(16807))
