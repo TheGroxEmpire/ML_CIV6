@@ -1,5 +1,5 @@
+import constants
 import dill
-import os
 import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
@@ -7,10 +7,12 @@ import keras.backend as K
 from keras.models import load_model
 from keras.models import Model
 from keras.layers import Dense, Input, Conv1D, Flatten, Add, Subtract, Lambda
+from keras.losses import MSE
+from keras.optimizers import adam_v2
 import random
 from collections import deque
 
-class Vanilla_DQN():
+class Vanilla_DQN:
     def __init__(self,
                 state,
                 action_size,
@@ -26,7 +28,7 @@ class Vanilla_DQN():
         self.epsilon_min = epsilon_min
         self.batch_size = batch_size
         self.discount_factor = discount_factor
-        self.save_path = "./saved_model/"
+        self.save_path = constants.SAVE_PATH
         self.memory = deque(maxlen=100000)
         self.model = self.create_model()
     
@@ -99,11 +101,9 @@ class Vanilla_DQN():
             self.model = load_model(f"{self.save_path}{file_name}")
             with open(f"{self.save_path}{file_name}\parameters.pkl", 'rb') as f:
                 self.epsilon, self.epsilon_decay, self.epsilon_min, self.discount_factor, self.memory, self.batch_size = dill.load(f)
-            print("Loading model")
+            print("Model loaded")
         except:
             print("Model can't be loaded")
-
-       
 
 class Dueling_DQN(Vanilla_DQN):
     def __init__(self,
@@ -140,76 +140,173 @@ class Dueling_DQN(Vanilla_DQN):
 
         return model
 
+class PPO:
+    def __init__(self, state, action_size, gamma=0.99, alpha=0.0003,
+                 gae_lambda=0.95, policy_clip=0.2, batch_size=32):
+        self.gamma = gamma
+        self.policy_clip = policy_clip
+        self.gae_lambda = gae_lambda
+        self.save_path = constants.SAVE_PATH
+        self.action_size = action_size
 
-class BasePPO(object):
+        self.actor = ActorNetwork(action_size)
+        self.actor.compile(optimizer=adam_v2.Adam(learning_rate=alpha))
+        self.critic = CriticNetwork()
+        self.critic.compile(optimizer=adam_v2.Adam(learning_rate=alpha))
+        self.memory = PPOMemory(batch_size)
 
-    def __init__(self, action_space, observation_space,scope, args):
-        self.scope = scope
-        self.action_space = action_space
-        self.observation_space = observation_space
-        self.action_bound = [self.action_space.low, self.action_space.high]
-        self.num_state = self.observation_space.shape[0]
-        self.num_action = self.action_space.shape[0]
-        self.cliprange = args.cliprange
-        self.checkpoint_path = args.checkpoint_dir+'/'+args.environment + '/' + args.policy
-        if not os.path.exists(self.checkpoint_path):
-            os.makedirs(self.checkpoint_path)
-        self.environment = args.environment
-        with tf.variable_scope('input'):
-            self.s = tf.placeholder("float", [None, self.num_state])
-        with tf.variable_scope('action'):
-            self.a = tf.placeholder(shape=[None, self.num_action], dtype=tf.float32)
-        with tf.variable_scope('target_value'):
-            self.y = tf.placeholder(shape=[None, 1], dtype=tf.float32)
-        with tf.variable_scope('advantages'):
-            self.advantage = tf.placeholder(shape=[None, 1], dtype=tf.float32)
+        self.log_prob = []
+        self.value = []
 
-    def build_critic_net(self, scope):
+    def remember(self, state, next_state, action, reward, done):
+        self.memory.store_memory(state, action, self.log_prob, self.value, reward, done)
 
-        raise NotImplementedError("You can't instantiate this class!")
+    def save_models(self):
+        try:
+            print("Saving model, do not terminate the program")
+            self.actor.save(f"{self.save_path}actor")
+            self.critic.save(f"{self.save_path}critic")
+            print("Model saved")
+        except:
+            print("Failed to save model")
+    def load_models(self):
+        try:
+            self.actor = load_model(f"{self.save_path}actor")
+            self.critic = load_model(f"{self.save_path}critic")
+            print("Model loaded")
+        except:
+            print("Model can't be loaded")
 
-    def build_actor_net(self, scope, trainable):
+    def act(self, observation):
+        state = tf.convert_to_tensor([observation])
 
-        raise NotImplementedError("You can't instantiate this class!")
+        probs = self.actor(state)
+        dist = tfp.distributions.Categorical(probs)
+        action = dist.sample()
+        self.log_prob = dist.log_prob(action)
+        self.value = self.critic(state)
 
+        action = action.numpy()[0]
+        self.value = self.value.numpy()[0]
+        self.log_prob = self.log_prob.numpy()[0]
 
-    def build_net(self):
+        return action[0]
 
-        self.value  = self.build_critic_net('value_net')
-        pi, pi_param = self.build_actor_net('actor_net', trainable= True)
-        old_pi, old_pi_param = self.build_actor_net('old_actor_net', trainable=False)
-        self.syn_old_pi = [oldp.assign(p) for p, oldp in zip(pi_param, old_pi_param)]
-        self.sample_op = tf.clip_by_value(tf.squeeze(pi.sample(1), axis=0), self.action_bound[0], self.action_bound[1])[0]
+    def replay(self):
+        state_arr, action_arr, old_prob_arr, vals_arr,\
+            reward_arr, dones_arr, batches = \
+            self.memory.generate_batches()
 
+        values = vals_arr
+        advantage = np.zeros(len(reward_arr), dtype=np.float32)
 
-        with tf.variable_scope('critic_loss'):
-            self.adv = self.y - self.value
-            self.critic_loss = tf.reduce_mean(tf.square(self.adv))
+        for t in range(len(reward_arr)-1):
+            discount = 1
+            a_t = 0
+            for k in range(t, len(reward_arr)-1):
+                a_t += discount*(reward_arr[k] + self.gamma*values[k+1] * (
+                    1-int(dones_arr[k])) - values[k])
+                discount *= self.gamma*self.gae_lambda
 
-        with tf.variable_scope('actor_loss'):
-            ratio = pi.prob(self.a) / old_pi.prob(self.a)   #(old_pi.prob(self.a)+ 1e-5)
-            pg_losses= self.advantage * ratio
-            pg_losses2 = self.advantage * tf.clip_by_value(ratio, 1.0 - self.cliprange, 1.0 + self.cliprange)
-            self.actor_loss = -tf.reduce_mean(tf.minimum(pg_losses, pg_losses2))
+            advantage[t] = a_t
 
-    def load_model(self, sess, saver):
-        checkpoint = tf.train.get_checkpoint_state(self.checkpoint_path)
+        for batch in batches:
+            with tf.GradientTape(persistent=True) as tape:
+                states = tf.convert_to_tensor(state_arr[batch])
+                old_probs = tf.convert_to_tensor(old_prob_arr[batch])
+                actions = tf.convert_to_tensor(action_arr[batch])
 
-        if checkpoint:
-            saver.restore(sess, checkpoint.model_checkpoint_path)
-            print('.............Model restored to global.............')
-        else:
-            print('................No model is found.................')
+                probs = self.actor(states)
+                dist = tfp.distributions.Categorical(probs)
+                new_probs = dist.log_prob(actions)
 
-    def save_model(self, sess, saver, time_step):
-        print('............save model ............')
-        saver.save(sess, self.checkpoint_path + '/'+self.environment +'-' + str(time_step) + '.ckpt')
+                critic_value = self.critic(states)
 
-    def choose_action(self, s, sess):
-        s = s[np.newaxis, :]
-        a = sess.run(self.sample_op, {self.s: s})
-        return a
+                critic_value = tf.squeeze(critic_value, 1)
 
-    def get_v(self, s, sess):
-        if s.ndim < 2: s = s[np.newaxis, :]
-        return sess.run(self.value, {self.s: s})[0, 0]
+                prob_ratio = tf.math.exp(new_probs - old_probs)
+                weighted_probs = advantage[batch] * prob_ratio
+                clipped_probs = tf.clip_by_value(prob_ratio,
+                                                    1-self.policy_clip,
+                                                    1+self.policy_clip)
+                weighted_clipped_probs = clipped_probs * advantage[batch]
+                actor_loss = -tf.math.minimum(weighted_probs,
+                                                weighted_clipped_probs)
+                actor_loss = tf.math.reduce_mean(actor_loss)
+
+                returns = advantage[batch] + values[batch]
+                # critic_loss = tf.math.reduce_mean(tf.math.pow(
+                #                                  returns-critic_value, 2))
+                critic_loss = MSE(critic_value, returns)
+
+            actor_params = self.actor.trainable_variables
+            actor_grads = tape.gradient(actor_loss, actor_params)
+            critic_params = self.critic.trainable_variables
+            critic_grads = tape.gradient(critic_loss, critic_params)
+            self.actor.optimizer.apply_gradients(
+                    zip(actor_grads, actor_params))
+            self.critic.optimizer.apply_gradients(
+                    zip(critic_grads, critic_params))
+
+class ActorNetwork(Model):
+    def __init__(self, n_actions, fc1_dims=512, fc2_dims=512):
+        super(ActorNetwork, self).__init__()
+
+        self.fc1 = Dense(fc1_dims, activation='relu')
+        self.fc2 = Dense(fc2_dims, activation='relu')
+        self.fc3 = Dense(n_actions, activation='softmax')
+
+    def call(self, state):
+        x = self.fc1(state)
+        x = self.fc2(x)
+        x = self.fc3(x)
+
+        return x
+
+class CriticNetwork(Model):
+    def __init__(self, fc1_dims=512, fc2_dims=512):
+        super(CriticNetwork, self).__init__()
+        self.fc1 = Dense(fc1_dims, activation='relu')
+        self.fc2 = Dense(fc2_dims, activation='relu')
+        self.q = Dense(1, activation=None)
+
+    def call(self, state):
+        x = self.fc1(state)
+        x = self.fc2(x)
+        q = self.q(x)
+
+        return q
+
+class PPOMemory:
+    def __init__(self, batch_size):
+        self.states = []
+        self.probs = []
+        self.vals = []
+        self.actions = []
+        self.rewards = []
+        self.dones = []
+
+        self.batch_size = batch_size
+
+    def generate_batches(self):
+        n_states = len(self.states)
+        batch_start = np.arange(0, n_states, self.batch_size)
+        indices = np.arange(n_states, dtype=np.int64)
+        np.random.shuffle(indices)
+        batches = [indices[i:i+self.batch_size] for i in batch_start]
+
+        return np.array(self.states),\
+            np.array(self.actions),\
+            np.array(self.probs),\
+            np.array(self.vals),\
+            np.array(self.rewards),\
+            np.array(self.dones),\
+            batches
+
+    def store_memory(self, state, action, probs, vals, reward, done):
+        self.states.append(state)
+        self.actions.append(action)
+        self.probs.append(probs)
+        self.vals.append(vals)
+        self.rewards.append(reward)
+        self.dones.append(done)

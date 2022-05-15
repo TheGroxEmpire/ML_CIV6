@@ -32,6 +32,8 @@ COLOR_DEFAULT_BG = COLOR_OCEAN
 # |  |__| |  /  _____  \  |  |  |  | |  |____    |  |     /  _____  \  |  |\  \----./  _____  \  |  |  |  |
 #  \______| /__/     \__\ |__|  |__| |_______|   | _|    /__/     \__\ | _| `._____/__/     \__\ |__|  |__|
 
+# DRL Model save path
+SAVE_PATH = "./saved_model/"
 
 # Game sizes
 GAME_WIDTH = 2000

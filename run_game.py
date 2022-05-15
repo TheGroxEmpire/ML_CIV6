@@ -11,7 +11,7 @@ import drl
 if __name__ == '__main__':
 
     # --- Load / save setting
-    enable_load = True
+    enable_load = False
     enable_save = False
     
     # --- Set up your algorithm here
@@ -20,8 +20,9 @@ if __name__ == '__main__':
     '''Algorithm list:
         - Vanilla-DQN
         - Dueling-DQN
+        - PPO
     '''
-    algorithm_version = 'Dueling-DQN'
+    algorithm_version = 'PPO'
 
     # --- Setting up the game environment
     env = game.Game(ml_ai=True, render=False)
@@ -32,7 +33,7 @@ if __name__ == '__main__':
     # with three units this will be a list of length 10
     state = np.array(env.get_observation())
 
-    # --- Data list for plot. These get turned to numpy array
+    # --- Data list for plot. These will get turned into numpy array
     attacker_r = []
     defender_r = []
     episodes = []
@@ -40,12 +41,13 @@ if __name__ == '__main__':
     # --- instantiate agents
     algorithm_dict = {
         'Vanilla-DQN': drl.Vanilla_DQN,
-        'Dueling-DQN': drl.Dueling_DQN
+        'Dueling-DQN': drl.Dueling_DQN,
+        'PPO': drl.PPO
     }
     # For attacker (5 units) it is one of 16807 possibilities (7^5)
-    attacker_agent = algorithm_dict[algorithm_version](state, np.array(16807))
+    attacker_agent = algorithm_dict[algorithm_version](state, 16807)
     # For defender (3 units) it is one of 343 possibilities (7^3)
-    defender_agent  = algorithm_dict[algorithm_version](state, np.array(343))   
+    defender_agent  = algorithm_dict[algorithm_version](state, 343)
 
     # --- load saved model
     if enable_load:
@@ -130,7 +132,6 @@ if __name__ == '__main__':
         plt.savefig(f"plots/rewards_vs_episodes_{algorithm_version}.png")
 
     plt.show()
-
     
 
             
