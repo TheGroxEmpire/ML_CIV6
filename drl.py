@@ -1,7 +1,9 @@
 import dill
+import os
 import numpy as np
+import tensorflow as tf
+import tensorflow_probability as tfp
 import keras.backend as K
-from keras.metrics import MeanSquaredError
 from keras.models import load_model
 from keras.models import Model
 from keras.layers import Dense, Input, Conv1D, Flatten, Add, Subtract, Lambda
@@ -137,3 +139,77 @@ class Dueling_DQN(Vanilla_DQN):
         model.compile(optimizer="adam", loss="mse")
 
         return model
+
+
+class BasePPO(object):
+
+    def __init__(self, action_space, observation_space,scope, args):
+        self.scope = scope
+        self.action_space = action_space
+        self.observation_space = observation_space
+        self.action_bound = [self.action_space.low, self.action_space.high]
+        self.num_state = self.observation_space.shape[0]
+        self.num_action = self.action_space.shape[0]
+        self.cliprange = args.cliprange
+        self.checkpoint_path = args.checkpoint_dir+'/'+args.environment + '/' + args.policy
+        if not os.path.exists(self.checkpoint_path):
+            os.makedirs(self.checkpoint_path)
+        self.environment = args.environment
+        with tf.variable_scope('input'):
+            self.s = tf.placeholder("float", [None, self.num_state])
+        with tf.variable_scope('action'):
+            self.a = tf.placeholder(shape=[None, self.num_action], dtype=tf.float32)
+        with tf.variable_scope('target_value'):
+            self.y = tf.placeholder(shape=[None, 1], dtype=tf.float32)
+        with tf.variable_scope('advantages'):
+            self.advantage = tf.placeholder(shape=[None, 1], dtype=tf.float32)
+
+    def build_critic_net(self, scope):
+
+        raise NotImplementedError("You can't instantiate this class!")
+
+    def build_actor_net(self, scope, trainable):
+
+        raise NotImplementedError("You can't instantiate this class!")
+
+
+    def build_net(self):
+
+        self.value  = self.build_critic_net('value_net')
+        pi, pi_param = self.build_actor_net('actor_net', trainable= True)
+        old_pi, old_pi_param = self.build_actor_net('old_actor_net', trainable=False)
+        self.syn_old_pi = [oldp.assign(p) for p, oldp in zip(pi_param, old_pi_param)]
+        self.sample_op = tf.clip_by_value(tf.squeeze(pi.sample(1), axis=0), self.action_bound[0], self.action_bound[1])[0]
+
+
+        with tf.variable_scope('critic_loss'):
+            self.adv = self.y - self.value
+            self.critic_loss = tf.reduce_mean(tf.square(self.adv))
+
+        with tf.variable_scope('actor_loss'):
+            ratio = pi.prob(self.a) / old_pi.prob(self.a)   #(old_pi.prob(self.a)+ 1e-5)
+            pg_losses= self.advantage * ratio
+            pg_losses2 = self.advantage * tf.clip_by_value(ratio, 1.0 - self.cliprange, 1.0 + self.cliprange)
+            self.actor_loss = -tf.reduce_mean(tf.minimum(pg_losses, pg_losses2))
+
+    def load_model(self, sess, saver):
+        checkpoint = tf.train.get_checkpoint_state(self.checkpoint_path)
+
+        if checkpoint:
+            saver.restore(sess, checkpoint.model_checkpoint_path)
+            print('.............Model restored to global.............')
+        else:
+            print('................No model is found.................')
+
+    def save_model(self, sess, saver, time_step):
+        print('............save model ............')
+        saver.save(sess, self.checkpoint_path + '/'+self.environment +'-' + str(time_step) + '.ckpt')
+
+    def choose_action(self, s, sess):
+        s = s[np.newaxis, :]
+        a = sess.run(self.sample_op, {self.s: s})
+        return a
+
+    def get_v(self, s, sess):
+        if s.ndim < 2: s = s[np.newaxis, :]
+        return sess.run(self.value, {self.s: s})[0, 0]
