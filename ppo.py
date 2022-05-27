@@ -38,20 +38,15 @@ class Agent:
         self.memory.store_memory(state, action, self.log_prob, self.value, reward, done)
 
     def save_model(self, file_name):
-        try:
-            print("Saving model, do not terminate the program")
-            self.actor.save(f"{self.save_path}{file_name}/actor")
-            self.critic.save(f"{self.save_path}{file_name}/critic")
-            print("Model saved")
-        except:
-            print("Failed to save model")
-    def load_models(self, file_name):
-        try:
-            self.actor = load_model(f"{self.save_path}{file_name}/actor")
-            self.critic = load_model(f"{self.save_path}{file_name}/critic")
-            print("Model loaded")
-        except:
-            print("Model can't be loaded")
+        print("Saving model, do not terminate the program")
+        self.actor.save(f"{self.save_path}{file_name}/actor")
+        self.critic.save(f"{self.save_path}{file_name}/critic")
+        print("Model saved")
+
+    def load_model(self, file_name):
+        self.actor = load_model(f"{self.save_path}{file_name}/actor")
+        self.critic = load_model(f"{self.save_path}{file_name}/critic")
+        print("Model loaded")
 
     def act(self, observation):
         state = tf.convert_to_tensor([observation])

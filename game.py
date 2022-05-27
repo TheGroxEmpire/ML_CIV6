@@ -1,9 +1,4 @@
 # game.py
-# Main game file. This file contains
-
-
-
-
 
 import pygame
 import constants

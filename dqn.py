@@ -106,22 +106,18 @@ class Agent():
                 self.eps_min else self.eps_min
 
     def save_model(self, file_name):
-        try:
-            print("Saving model, do not terminate the program")
-            self.q_eval.save(f"{self.save_path}{file_name}")
-            with open(f"{self.save_path}{file_name}/parameters.pkl", 'wb') as f:
-                dill.dump([self.gamma, self.epsilon, self.eps_dec, self.eps_min, self.batch_size, self.memory], f)
+        print("Saving model, do not terminate the program")
+        self.q_eval.save(f"{self.save_path}{file_name}")
+        with open(f"{self.save_path}{file_name}/parameters.pkl", 'wb') as f:
+            dill.dump([self.gamma, self.epsilon, self.eps_dec, self.eps_min, self.batch_size, self.memory], f)
 
-            print("Model saved")
-        except:
-            print("Failed to save model")
+        print("Model saved")
+
 
 
     def load_model(self, file_name):
-        try:
-            self.q_eval = load_model(f"{self.save_path}{file_name}")
-            with open(f"{self.save_path}{file_name}/parameters.pkl", 'rb') as f:
-                self.gamma, self.epsilon, self.eps_dec, self.eps_min, self.batch_size, self.memory = dill.load(f)
-            print("Model loaded")
-        except:
-            print("Model can't be loaded")
+        self.q_eval = load_model(f"{self.save_path}{file_name}")
+        with open(f"{self.save_path}{file_name}/parameters.pkl", 'rb') as f:
+            self.gamma, self.epsilon, self.eps_dec, self.eps_min, self.batch_size, self.memory = dill.load(f)
+        
+        print("Model loaded")

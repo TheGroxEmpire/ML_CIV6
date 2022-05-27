@@ -13,18 +13,18 @@ import dueling_ddqn
 if __name__ == '__main__':
 
     # --- Load / save setting
-    enable_load = False
+    enable_load = True
     enable_save = True
     
     # --- Set up your algorithm here
-    N_EPISODES = 100
+    N_EPISODES = 588990
     N_EPISODE_STEPS = 30
     '''Algorithm list:
         - dqn
         - dueling_ddqn
         - ppo
     '''
-    algorithm_version = 'dqn'
+    algorithm_version = 'dueling_ddqn'
 
     # --- Setting up the game environment
     env = game.Game(ml_ai=True, render=False)
@@ -53,7 +53,7 @@ if __name__ == '__main__':
 
     # --- load saved model
     if enable_load:
-        try:
+        #try:
             with open(f"./plots/{algorithm_version}.csv") as f:
                 lines = list(csv.reader(f))
             lines = np.array(lines, float)
@@ -63,9 +63,9 @@ if __name__ == '__main__':
             attacker_agent.load_model(f'attacker_{algorithm_version}')
             defender_agent.load_model(f'defender_{algorithm_version}')
             print("Continuing from last save data")
-        except:
-            print("No save data to load")
-            cumulative_episodes = 0
+        #except:
+            #print("No save data to load")
+            #cumulative_episodes = 0
     else:
         cumulative_episodes = 0 
 
@@ -110,8 +110,8 @@ if __name__ == '__main__':
         # --- Get end time
         e = time.time()
         print(f"Episode: {epoch}, time spent: {round(e-s, 2)}s")
-        # --- Save model and data value every 100 episodes or at the last episode
-        if enable_save and (epoch % 100 == 0 or epoch == episode_end-1):
+        # --- Save model and data value every 1000 episodes or at the last episode
+        if enable_save and (epoch % 1000 == 0 or epoch == episode_end-1):
             attacker_agent.save_model(f'attacker_{algorithm_version}')
             defender_agent.save_model(f'defender_{algorithm_version}')
 
@@ -128,7 +128,7 @@ if __name__ == '__main__':
     episodes = np.arange(1, episodes+1)
     plt.plot(episodes, attacker_r, label='Attacker rewards')
     plt.plot(episodes, defender_r, label='Defender rewards')
-    plt.title('Rewards vs Episodes')
+    plt.title(f"{algorithm_version} Rewards vs Episodes")
     plt.legend() 
     if enable_save:
         plt.savefig(f"plots/rewards_vs_episodes_{algorithm_version}.png")

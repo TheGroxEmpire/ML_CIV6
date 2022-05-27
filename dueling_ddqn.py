@@ -2,7 +2,6 @@ import dill
 import tensorflow as tf
 import keras
 from keras.optimizers import adam_v2
-from keras.models import load_model
 import numpy as np
 import dqn
 
@@ -98,7 +97,6 @@ class Agent(dqn.Agent):
 
         self.q_eval.compile(optimizer=adam_v2.Adam(learning_rate=lr),
                             loss='mean_squared_error')
-        # just a formality, won't optimize network
         self.q_next.compile(optimizer=adam_v2.Adam(learning_rate=lr),
                             loss='mean_squared_error')
 
@@ -140,21 +138,19 @@ class Agent(dqn.Agent):
         self.learn_step_counter += 1
 
     def save_model(self, file_name):
-        try:
-            print("Saving model, do not terminate the program")
-            self.q_eval.save(f"{self.save_path}{file_name}")
-            with open(f"{self.save_path}{file_name}/parameters.pkl", 'wb') as f:
-                dill.dump([self.gamma, self.epsilon, self.eps_dec, self.eps_min, self.batch_size, self.memory], f)
-
-            print("Model saved")
-        except:
-            print("Failed to save model")
+        print("Saving model, do not terminate the program")
+        self.q_eval.save_weights(f"{self.save_path}{file_name}")
+        self.q_next.save_weights(f"{self.save_path}{file_name}/target_weight")
+        with open(f"{self.save_path}{file_name}/parameters.pkl", 'wb') as f:
+            dill.dump([self.gamma, self.epsilon, self.eps_dec, self.eps_min, self.batch_size, self.memory], f)
+        
+        print("Model saved")
 
     def load_model(self, file_name):
-        try:
-            self.q_eval = load_model(f"{self.save_path}{file_name}")
-            with open(f"{self.save_path}{file_name}/parameters.pkl", 'rb') as f:
-                self.gamma, self.epsilon, self.eps_dec, self.eps_min, self.batch_size, self.memory = dill.load(f)
-            print("Model loaded")
-        except:
-            print("Model can't be loaded")
+        self.q_eval.load_weights(f"{self.save_path}{file_name}")
+        self.q_next.load_weights(f"{self.save_path}{file_name}/target_weight")
+        with open(f"{self.save_path}{file_name}/parameters.pkl", 'rb') as f:
+            self.gamma, self.epsilon, self.eps_dec, self.eps_min, self.batch_size, self.memory = dill.load(f)
+        self.learn_step_counter += 1
+        
+        print("Model loaded")
