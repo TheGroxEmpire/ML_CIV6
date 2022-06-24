@@ -17,7 +17,7 @@ class Agent:
                 gae_lambda=0.95, 
                 policy_clip=0.2, 
                 batch_size=64, 
-                n_epochs=10):
+                n_epochs=20):
         self.gamma = gamma
         self.policy_clip = policy_clip
         self.gae_lambda = gae_lambda

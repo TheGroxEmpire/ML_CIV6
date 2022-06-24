@@ -17,7 +17,7 @@ if __name__ == '__main__':
     enable_save = True
     
     # --- Set up your algorithm here
-    N_EPISODES = 588990
+    N_EPISODES = 600000
     N_EPISODE_STEPS = 30
     '''Algorithm list:
         - dqn
@@ -35,10 +35,10 @@ if __name__ == '__main__':
     # with three units this will be a list of length 10
     state = np.array(env.get_observation())
 
-    # --- Data list for plot. These will get turned into numpy array
-    attacker_r = []
-    defender_r = []
-    episodes = []
+    # --- Data list for plot
+    attacker_r = np.array([])
+    defender_r = np.array([])
+    episodes = np.array([])
 
     # --- instantiate agents
     algorithm_dict = {
@@ -53,19 +53,16 @@ if __name__ == '__main__':
 
     # --- load saved model
     if enable_load:
-        #try:
-            with open(f"./plots/{algorithm_version}.csv") as f:
-                lines = list(csv.reader(f))
-            lines = np.array(lines, float)
-            attacker_r, defender_r = lines[:2]
-            # Cumulative episodes is the number of episode from previous load. If there's nothing to load, start at 0
-            cumulative_episodes = len(attacker_r)
-            attacker_agent.load_model(f'attacker_{algorithm_version}')
-            defender_agent.load_model(f'defender_{algorithm_version}')
-            print("Continuing from last save data")
-        #except:
-            #print("No save data to load")
-            #cumulative_episodes = 0
+        with open(f"./plots/{algorithm_version}.csv") as f:
+            lines = list(csv.reader(f))
+        lines = np.array(lines, float)
+        attacker_r, defender_r = lines[:2]
+        # Cumulative episodes is the number of episode from previous load. If there's nothing to load, start at 0
+        cumulative_episodes = len(attacker_r)
+        attacker_agent.load_model(f'attacker_{algorithm_version}')
+        defender_agent.load_model(f'defender_{algorithm_version}')
+        print("Continuing from last save data")
+       
     else:
         cumulative_episodes = 0 
 
@@ -124,10 +121,13 @@ if __name__ == '__main__':
     print(f"Training finished. Total elapsed time: {round(training_end_time-training_start_time, 2)}s")
 
     # --- Rewards vs episode plot
-    episodes = len(attacker_r)
-    episodes = np.arange(1, episodes+1)
-    plt.plot(episodes, attacker_r, label='Attacker rewards')
-    plt.plot(episodes, defender_r, label='Defender rewards')
+    def moving_average(x, w=10000):
+        avg = np.convolve(x, np.ones(w), 'valid') / w
+        avg = np.append(avg, np.repeat(np.nan, w-1))
+        return avg
+
+    plt.plot(moving_average(attacker_r), label='Attacker rewards')
+    plt.plot(moving_average(defender_r), label='Defender rewards')
     plt.title(f"{algorithm_version} Rewards vs Episodes")
     plt.legend() 
     if enable_save:
