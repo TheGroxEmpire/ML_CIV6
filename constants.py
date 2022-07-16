@@ -126,8 +126,11 @@ LOC_CITY = (4,4)
 #LOC_SPRITE_3 = (6,1)
 
 # --- Start with a random start location
-HEX_LOCATIONS = []
+HEX_LOCATIONS_ATTACKER = []
+HEX_LOCATIONS_DEFENDER = []
 for ii in range(0, MAP_WIDTH):
     for jj in range(0, MAP_HEIGHT):
-        if ii != LOC_CITY[0] or jj != LOC_CITY[1]:
-            HEX_LOCATIONS.append([ii,jj])
+        if ii < 2 or ii > 6 and jj < 2 or jj > 6:
+            HEX_LOCATIONS_ATTACKER.append([ii,jj])
+        elif 2 < ii < 6 and 2 < jj < 6:
+            HEX_LOCATIONS_DEFENDER.append([ii,jj])
