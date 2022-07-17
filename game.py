@@ -573,7 +573,7 @@ class Game():
             if self.render:
                 draw_game()         
 
-        if attacker_action == 'QUIT' or defender_action == 'quit':
+        if attacker_action == 'QUIT' or defender_action == 'QUIT':
             game_quit = True
 
         # --- Get rewards after the city attacks, in case a unit dies
