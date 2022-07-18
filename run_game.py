@@ -13,12 +13,12 @@ import dueling_ddqn
 if __name__ == '__main__':
 
     # --- Load / save setting
-    enable_load = True
-    enable_save = True
+    enable_load = False
+    enable_save = False
     
     # --- Set up your algorithm here
-    N_EPISODES = 600000
-    N_EPISODE_STEPS = 30
+    N_EPISODES = 500000
+    N_TURNS = 30
     '''Algorithm list:
         - dqn
         - dueling_ddqn
@@ -46,10 +46,10 @@ if __name__ == '__main__':
         'dueling_ddqn': dueling_ddqn.Agent,
         'ppo': ppo.Agent
     }
-    # For attacker (5 units) it is one of 16807 possibilities (7^5)
-    attacker_agent = algorithm_dict[algorithm_version](state, 16807)
-    # For defender (3 units) it is one of 343 possibilities (7^3)
-    defender_agent  = algorithm_dict[algorithm_version](state, 343)
+    # For attacker (5 units) it is one of 36 possibilities (5*7+1)
+    attacker_agent = algorithm_dict[algorithm_version](state, 36)
+    # For defender (3 units) it is one of 22 possibilities (3*7+1)
+    defender_agent  = algorithm_dict[algorithm_version](state, 22)
 
     # --- load saved model
     if enable_load:
@@ -77,24 +77,38 @@ if __name__ == '__main__':
 
         # --- Get start time
         s = time.time()
-        for step in range(N_EPISODE_STEPS):
+        for step in range(N_TURNS):
+            done = False
+            attacker_end_turn = False
+            defender_end_turn = False
+            # print(f"Attacker turn")
+            while not attacker_end_turn:
+                 # --- Determine what action to take. 
+                attacker_action = attacker_agent.act(state)
+                # --- Perform that action in the environment
+                # print(f"Attacker action: {attacker_action}, turn: {step}")
+                next_state, attacker_reward, attacker_end_turn, done = env.step('attacker', attacker_action)
+                # --- Store state and action into memory
+                attacker_agent.remember(state, next_state, attacker_action, attacker_reward, done)
+                # --- Update the current state of the game
+                state = np.array(next_state)
+                if done:
+                    break
 
-            # --- Determine what action to take. 
-            attacker_action = attacker_agent.act(state)
-            defender_action = defender_agent.act(state)
+            # print(f"Defender turn")
+            while not defender_end_turn:
+                 # --- Determine what action to take. 
+                defender_action = defender_agent.act(state)
+                # --- Perform that action in the environment
+                # print(f"Defender action: {defender_action}, turn: {step}")
+                next_state, defender_reward, defender_end_turn, done = env.step('defender', defender_action)
+                # --- Store state and action into memory
+                defender_agent.remember(state, next_state, defender_action, defender_reward, done)
+                # --- Update the current state of the game
+                state = np.array(next_state)
+                if done:
+                    break
 
-            # --- Perform that action in the environment
-            #print(f"Attacker action: {attacker_action}, turn: {step}")
-            #print(f"Defender action: {defender_action}, turn: {step}")
-            next_state, attacker_reward, defender_reward, done = env.step(attacker_action, defender_action)
-            
-            # --- Store state and action into memory
-            attacker_agent.remember(state, next_state, attacker_action, attacker_reward, done)
-            defender_agent.remember(state, next_state, defender_action, defender_reward, done)
-            
-            # --- Update the current state of the game
-            state = np.array(next_state)      
-            # --- Break the step loop if the game is done, aka the city is dead
             if done:
                 break
 

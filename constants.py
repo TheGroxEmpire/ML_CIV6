@@ -51,7 +51,7 @@ MAP_HEIGHT = 8
 GAME_FPS = 1
 
 # --- Main dictionary to determine movement direction
-directions = ['NE', 'E', 'SE', 'SW', 'W', 'NW', 'SPACE']
+directions = ['NE', 'E', 'SE', 'SW', 'W', 'NW', 'FORTIFY', 'IDLE']
 MOVEMENT_DIR = {}
 for dir in directions:
     MOVEMENT_DIR[dir] = {}
@@ -70,8 +70,10 @@ MOVEMENT_DIR['W']['EVEN'] = [-1,0]
 MOVEMENT_DIR['W']['ODD'] = [-1,0]
 MOVEMENT_DIR['NW']['EVEN'] = [-1,-1]
 MOVEMENT_DIR['NW']['ODD'] = [0,-1]
-MOVEMENT_DIR['SPACE']['EVEN'] = [0,0]
-MOVEMENT_DIR['SPACE']['ODD'] = [0,0]
+MOVEMENT_DIR['IDLE']['EVEN'] = [0,0]
+MOVEMENT_DIR['IDLE']['ODD'] = [0,0]
+MOVEMENT_DIR['FORTIFY']['EVEN'] = ['FORTIFY','FORTIFY']
+MOVEMENT_DIR['FORTIFY']['ODD'] = ['FORTIFY','FORTIFY']
 
 # --- List of possible actions the multiple units, to be used as the action (aka a number to call them) for the AI
 # MOVEMENT_ONE_UNIT = []
@@ -97,6 +99,22 @@ for dir in directions:
                 for dir5 in directions:
                     MOVEMENT_FIVE_UNITS.append([dir, dir2, dir3, dir4, dir5])
 
+directions_no_idle = directions[:-1]
+SINGLE_MOVEMENT_THREE_UNITS = []
+for i in range(3):
+    for dir in directions_no_idle:
+        temp = ['IDLE'] * 3
+        temp[i] = dir
+        SINGLE_MOVEMENT_THREE_UNITS.append(temp)
+SINGLE_MOVEMENT_THREE_UNITS.append(['IDLE'] * 3)
+
+SINGLE_MOVEMENT_FIVE_UNITS = []
+for i in range(5):
+    for dir in directions_no_idle:
+        temp = ['IDLE'] * 5
+        temp[i] = dir
+        SINGLE_MOVEMENT_FIVE_UNITS.append(temp)
+SINGLE_MOVEMENT_FIVE_UNITS.append(['IDLE'] * 5)
 
 NEIGHBORING_TILES = [(1,0), (1,-1), (0,-1), (-1,0), (1,1), (0,1)]
 
