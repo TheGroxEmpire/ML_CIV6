@@ -575,12 +575,9 @@ class Game():
                 reward -= 0.5
                 for obj in CITY_OBJECTS:
                 # Check to see if the city is dead or not
-                    if obj.hp <= 0:
-                        print("City is destroyed")
-                        game_quit = True
-
-                    # Attempt to heal the city otherwise
-                    obj.take_turn()
+                    if obj.hp >= 0:
+                        # Attempt to heal the city otherwise
+                        obj.take_turn()
             else:
                 TURN_NUMBER += 1
             
@@ -595,6 +592,12 @@ class Game():
             if all_attacker_dead:
                 print("All attacker units are dead")
                 game_quit = True
+
+            for obj in CITY_OBJECTS:
+                # Check to see if the city is dead or not
+                    if obj.hp <= 0:
+                        print("City is destroyed")
+                        game_quit = True
 
             if self.render:
                 draw_game()         

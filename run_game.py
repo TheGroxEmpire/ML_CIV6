@@ -14,7 +14,7 @@ if __name__ == '__main__':
 
     # --- Load / save setting
     enable_load = False
-    enable_save = False
+    enable_save = True
     
     # --- Set up your algorithm here
     N_EPISODES = 10000
@@ -24,7 +24,7 @@ if __name__ == '__main__':
         - dueling_ddqn
         - ppo
     '''
-    algorithm_version = 'dueling_ddqn'
+    algorithm_version = 'ppo'
 
     # --- Setting up the game environment
     env = game.Game(ml_ai=True, render=False)
