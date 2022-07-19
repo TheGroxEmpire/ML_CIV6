@@ -702,7 +702,7 @@ class Game():
             for obj in ENEMY_OBJECTS[team]:
                 #print('BEFORE: {} status of {}'.format(obj.name_instance, obj.status))
                 if obj.status == 'dead':
-                    reward += 1
+                    reward += 3
                     obj.status = None
 
 
