@@ -20,7 +20,7 @@ if __name__ == '__main__':
     
     # --- Set up your algorithm here
     N_EPISODES = 100000
-    N_TURNS = 30
+    N_TURNS = 15
     '''Algorithm list:
         - dqn
         - dueling_ddqn
