@@ -605,13 +605,20 @@ class Game():
                 if obj.alive == True:
                     obj.movement = obj.movement_max
             if team == 'attacker':
-                reward -= 0.5
-                print("end turn attacker")
-                for obj in CITY_OBJECTS:
-                # Check to see if the city is dead or not
-                    if obj.hp >= 0:
+                reward -= 1
+                for obj in enumerate(CITY_OBJECTS):
+                    city_loc = obj[0]
+                     # Check to see if the city is dead or not
+                    if CITY_OBJECTS[city_loc].hp >= 0:
                         # Attempt to heal the city otherwise
-                        obj.take_turn()
+                        CITY_OBJECTS[city_loc].take_turn()
+
+                for obj in OWN_OBJECTS[team]:
+                    # --- Rewards for how far they are away from the city!
+                    # - This is a linear reward, 0 for being next to city, -0.5 for maximum distance, per unit
+                    dist = hex_distance([obj.x, obj.y], [CITY_OBJECTS[city_loc].x,CITY_OBJECTS[city_loc].y])
+                    dist_reward = float(dist - 1) / (max([constants.MAP_HEIGHT, constants.MAP_WIDTH]) - 2)
+                    reward -= dist_reward / 0.5
             else:
                 TURN_NUMBER += 1
             
@@ -653,25 +660,22 @@ class Game():
     def get_rewards(self, team):
         '''This definition will return the attacker agent reward status for each step as
         well as the location of the city relative to the attacker agent units'''
-        global CITY_OBJECTS, ATTACKER_OBJECTS, DEFENDER_OBJECTS, OWN_OBJECTS, ENEMY_OBJECTS
-        
+        global CITY_OBJECTS, ATTACKER_OBJECTS, DEFENDER_OBJECTS, OWN_OBJECTS, ENEMY_OBJECTS    
         reward = 0
-
         
         for obj in enumerate(CITY_OBJECTS):
-                city_loc = obj[0]
                 if team == 'attacker':
                     # --- Rewards for city status
                         if obj[1].status == 'dead':
-                            reward += 10
+                            reward += 50
                             obj[1].status = None
                         elif obj[1].status == 'took damage':
                             reward += 0.5
                             obj[1].status = obj[1].status_default
                         elif obj[1].status == 'healed':
                             reward -= 0.3
-                            obj[1].status = obj[1].status_default          
-        print(f"reward before status: {reward}")
+                            obj[1].status = obj[1].status_default
+
         # --- REWARDS for own unit status
         for obj in OWN_OBJECTS[team]:
             #print('BEFORE: {} status of {}'.format(obj.name_instance, obj.status))
@@ -691,21 +695,12 @@ class Game():
                 reward += 0.2
                 obj.status = obj.status_default
 
-            if team == 'attacker':
-                # --- Rewards for how far they are away from the city!
-                # - This is a linear reward, 0 for being next to city, -0.5 for maximum distance, per unit
-                dist = hex_distance([obj.x, obj.y], [CITY_OBJECTS[city_loc].x,CITY_OBJECTS[city_loc].y])
-                dist_reward = float(dist - 1) / (max([constants.MAP_HEIGHT, constants.MAP_WIDTH]) - 2)
-                reward -= dist_reward / 0.5
-
-            print(f"reward before status: {reward}")
         # --- REWARDS for opponent unit status
         for obj in ENEMY_OBJECTS[team]:
             #print('BEFORE: {} status of {}'.format(obj.name_instance, obj.status))
             if obj.status == 'dead':
                 reward += 3
                 obj.status = None
-
 
         return reward
 
