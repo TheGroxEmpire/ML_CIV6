@@ -1,6 +1,8 @@
 # run_game.py
 # Basic file how to run the game and control it with an AI
 
+import pygame
+import constants
 import csv
 import time
 import numpy as np
@@ -27,7 +29,7 @@ if __name__ == '__main__':
     algorithm_version = 'ppo'
 
     # --- Setting up the game environment
-    env = game.Game(ml_ai=True, render=False)
+    env = game.Game(ml_ai=True, render=True)
     env.game_initialize(ep_number=0)
 
     # --- Get the current state of the game by calling get_observation_X

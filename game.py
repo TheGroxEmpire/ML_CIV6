@@ -156,11 +156,14 @@ class C_Unit(C_Sprite):
 
             # --- Move the unit if it can
             if not tile_is_wall and target is None:
+                # If target moved into ZoC it should not be allowed to move again
                 if not (self.in_zoc and self.movement < self.movement_max):
                     self.movement -= 1
                     self.x += dx
                     self.y += dy
                     self.check_zoc_status()
+                else:
+                    self.movement = 0
 
             # print(f"{self.name_instance} made a move, movement {self.movement}")
     def take_damage(self,
@@ -642,8 +645,8 @@ class Game():
         # --- Get rewards after the city attacks, in case a unit dies
         reward += self.get_rewards(team)
         
-        #CLOCK = pygame.time.Clock()
-        #CLOCK.tick(constants.GAME_FPS)
+        # CLOCK = pygame.time.Clock()
+        # CLOCK.tick(constants.GAME_FPS)
 
         return self.get_observation(), reward, end_turn, game_quit
 
