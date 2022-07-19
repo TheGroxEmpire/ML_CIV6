@@ -169,6 +169,8 @@ class C_Unit(C_Sprite):
                         # --- Only add alive enemy units with ZOC
                         if temp.alive and temp.team != self.team and temp.has_zoc:
                             self.in_zoc = True
+                            return
+        self.in_zoc = False
 
 
 class C_City(C_Sprite):
