@@ -24,7 +24,7 @@ if __name__ == '__main__':
         - dueling_ddqn
         - ppo
     '''
-    algorithm_version = 'dqn'
+    algorithm_version = 'dueling_ddqn'
 
     # --- Setting up the game environment
     env = game.Game(ml_ai=True, render=False)
@@ -84,7 +84,9 @@ if __name__ == '__main__':
             attacker_reward = 0
             defender_reward = 0
             # print(f"Attacker turn")
-            while not attacker_end_turn:
+            while True:
+                if done or not attacker_end_turn:
+                    break
                  # --- Determine what action to take. 
                 attacker_action = attacker_agent.act(state)
                 # --- Perform that action in the environment
@@ -94,11 +96,12 @@ if __name__ == '__main__':
                 attacker_agent.remember(state, next_state, attacker_action, attacker_reward, done)
                 # --- Update the current state of the game
                 state = np.array(next_state)
-                if done:
-                    break
+                
 
             # print(f"Defender turn")
             while not defender_end_turn:
+                if done or not defender_end_turn:
+                    break
                  # --- Determine what action to take. 
                 defender_action = defender_agent.act(state)
                 # --- Perform that action in the environment
@@ -108,8 +111,6 @@ if __name__ == '__main__':
                 defender_agent.remember(state, next_state, defender_action, defender_reward, done)
                 # --- Update the current state of the game
                 state = np.array(next_state)
-                if done:
-                    break
 
             if done:
                 break

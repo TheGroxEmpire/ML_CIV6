@@ -576,6 +576,8 @@ class Game():
                     if obj.hp <= 0:
                         print("City is destroyed")
                         game_quit = True
+                        reward += self.get_rewards(team)
+                        return self.get_observation(), reward, False, game_quit
 
                     # Attempt to heal the city otherwise
                     obj.take_turn()
@@ -594,6 +596,8 @@ class Game():
             if all_attacker_dead:
                 print("All attacker units are dead")
                 game_quit = True
+                reward += self.get_rewards(team)
+                return self.get_observation(), reward, False, game_quit
 
             if self.render:
                 draw_game()         
