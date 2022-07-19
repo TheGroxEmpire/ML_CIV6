@@ -14,7 +14,7 @@ if __name__ == '__main__':
 
     # --- Load / save setting
     enable_load = False
-    enable_save = True
+    enable_save = False
     
     # --- Set up your algorithm here
     N_EPISODES = 10000
@@ -24,7 +24,7 @@ if __name__ == '__main__':
         - dueling_ddqn
         - ppo
     '''
-    algorithm_version = 'dqn'
+    algorithm_version = 'dueling_ddqn'
 
     # --- Setting up the game environment
     env = game.Game(ml_ai=True, render=False)
@@ -85,7 +85,7 @@ if __name__ == '__main__':
             defender_reward = 0
             # print(f"Attacker turn")
             while True:
-                if done or not attacker_end_turn:
+                if done or attacker_end_turn:
                     break
                  # --- Determine what action to take. 
                 attacker_action = attacker_agent.act(state)
@@ -100,7 +100,7 @@ if __name__ == '__main__':
 
             # print(f"Defender turn")
             while True:
-                if done or not defender_end_turn:
+                if done or defender_end_turn:
                     break
                  # --- Determine what action to take. 
                 defender_action = defender_agent.act(state)

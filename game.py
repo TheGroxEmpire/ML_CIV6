@@ -564,8 +564,10 @@ class Game():
         # --- agent action definition
         action = 'no-action'
         game_quit = False
+        end_turn = False
 
         if not any(obj.movement > 0 for obj in OWN_OBJECTS[team]):
+            end_turn = True
             for obj in OWN_OBJECTS[team]:
                 if obj.alive == True:
                     obj.movement = obj.movement_max
@@ -576,28 +578,23 @@ class Game():
                     if obj.hp <= 0:
                         print("City is destroyed")
                         game_quit = True
-                        reward += self.get_rewards(team)
-                        return self.get_observation(), reward, False, game_quit
 
                     # Attempt to heal the city otherwise
                     obj.take_turn()
             else:
                 TURN_NUMBER += 1
-            return self.get_observation(), reward, True, game_quit
             
         # --- draw the game
         if self.render:
             draw_game()
 
-        if self.ml_ai and not game_quit:
+        if self.ml_ai and not game_quit and not end_turn:
             # --- Agent moves input
             action = self.game_handle_moves_ml_ai(team, action_input)
             all_attacker_dead = all(obj.hp <= 0 for obj in ATTACKER_OBJECTS)
             if all_attacker_dead:
                 print("All attacker units are dead")
                 game_quit = True
-                reward += self.get_rewards(team)
-                return self.get_observation(), reward, False, game_quit
 
             if self.render:
                 draw_game()         
@@ -611,7 +608,7 @@ class Game():
         #CLOCK = pygame.time.Clock()
         #CLOCK.tick(constants.GAME_FPS)
 
-        return self.get_observation(), reward, False, game_quit
+        return self.get_observation(), reward, end_turn, game_quit
 
     def get_rewards(self, team):
         '''This definition will return the attacker agent reward status for each step as
