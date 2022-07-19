@@ -94,7 +94,7 @@ class C_Unit(C_Sprite):
 
         # --- Check to see if the units is still alive
         if self.alive:
-            # print(f"{self.name_instance} attempting to make a move, movement: {self.movement}")
+            print(f"{self.name_instance} attempting to make a move, movement: {self.movement}")
             if self.movement <= 0:
                 # print(f"{self.name_instance} FAILED to make a move")
                 assert(False)
@@ -109,6 +109,7 @@ class C_Unit(C_Sprite):
                 # If unit is already fortified, add 1 more dug in level (max 2)
                 if self.dug_in < 2:
                     self.dug_in += 1
+                print(f"{self.name_instance} fortifying, movement: {self.movement}")
                 return
 
             # Check to see if the movement is still "in bounds"
@@ -121,6 +122,7 @@ class C_Unit(C_Sprite):
             # --- set unit status to 'hit wall' if it hit the wall
             if tile_is_wall:
                 self.status = 'hit wall'
+                print(f"{self.name_instance} hit a wall, movement: {self.movement}")
                 return
             
             target = map_check_for_creatures(self.x + dx,
@@ -147,7 +149,7 @@ class C_Unit(C_Sprite):
                 if self.strength_ranged <= 0 and target.alive == False:
                     self.x += dx
                     self.y += dy
-                # print(f"{self.name_instance} made an attack, movement: {self.movement}")
+                print(f"{self.name_instance} made an attack, movement: {self.movement}")
                 return
 
             # --- Remove dug in bonus if unit moves
@@ -162,10 +164,8 @@ class C_Unit(C_Sprite):
                     self.x += dx
                     self.y += dy
                     self.check_zoc_status()
-                else:
-                    self.movement = 0
 
-            # print(f"{self.name_instance} made a move, movement {self.movement}")
+            print(f"{self.name_instance} made a move, movement {self.movement}")
     def take_damage(self,
                     damage,
                     aggressor_alive = True):
@@ -968,6 +968,7 @@ class Game():
         direction = constants.MOVEMENT_ONE_UNIT[action]
         unit.move(constants.MOVEMENT_DIR[direction][parity][0],
                                 constants.MOVEMENT_DIR[direction][parity][1])
+        
 
         return "player-moved"
 

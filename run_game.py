@@ -15,7 +15,7 @@ import dueling_ddqn
 if __name__ == '__main__':
 
     # --- Load / save setting
-    enable_load = False
+    enable_load = True
     enable_save = False
     
     # --- Set up your algorithm here
@@ -26,7 +26,7 @@ if __name__ == '__main__':
         - dueling_ddqn
         - ppo
     '''
-    algorithm_version = 'ppo'
+    algorithm_version = 'dueling_ddqn'
 
     # --- Setting up the game environment
     env = game.Game(ml_ai=True, render=True)
