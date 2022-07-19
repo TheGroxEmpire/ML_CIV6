@@ -17,14 +17,14 @@ if __name__ == '__main__':
     enable_save = True
     
     # --- Set up your algorithm here
-    N_EPISODES = 1000
+    N_EPISODES = 10000
     N_TURNS = 30
     '''Algorithm list:
         - dqn
         - dueling_ddqn
         - ppo
     '''
-    algorithm_version = 'dueling_ddqn'
+    algorithm_version = 'dqn'
 
     # --- Setting up the game environment
     env = game.Game(ml_ai=True, render=False)
@@ -99,7 +99,7 @@ if __name__ == '__main__':
                 
 
             # print(f"Defender turn")
-            while not defender_end_turn:
+            while True:
                 if done or not defender_end_turn:
                     break
                  # --- Determine what action to take. 
@@ -125,7 +125,7 @@ if __name__ == '__main__':
         e = time.time()
         print(f"Episode: {epoch}, time spent: {round(e-s, 2)}s")
         # --- Save model and data value every 1000 episodes or at the last episode
-        if enable_save and (epoch % 1000 == 0 or epoch == episode_end-1):
+        if enable_save and (epoch % 100 == 0 or epoch == episode_end-1):
             attacker_agent.save_model(f'attacker_{algorithm_version}')
             defender_agent.save_model(f'defender_{algorithm_version}')
 
