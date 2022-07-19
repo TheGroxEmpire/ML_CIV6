@@ -699,7 +699,7 @@ class Game():
         # --- REWARDS for opponent unit status
         for obj in ENEMY_OBJECTS[team]:
             #print('BEFORE: {} status of {}'.format(obj.name_instance, obj.status))
-            if obj.status == 'dead_2':
+            if obj.status == 'dead' or obj.status == 'dead_2':
                 reward += 3
                 obj.status = None
         # print(f"Reward before final: {reward}")
