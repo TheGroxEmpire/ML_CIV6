@@ -558,20 +558,18 @@ class Game():
 
     def step(self,
             team,
-            action_input=0):
+            action_input=0, reward=0):
         """In this function we take a step for the agent in the main game."""
         global CITY_OBJECTS, TURN_NUMBER
         # --- agent action definition
         action = 'no-action'
         game_quit = False
-        reward = 0
 
         if not any(obj.movement > 0 for obj in OWN_OBJECTS[team]):
             for obj in OWN_OBJECTS[team]:
                 if obj.alive == True:
                     obj.movement = obj.movement_max
             if team == 'attacker':
-                TURN_NUMBER += 1
                 reward -= 0.5
                 for obj in CITY_OBJECTS:
                 # Check to see if the city is dead or not
@@ -581,6 +579,8 @@ class Game():
 
                     # Attempt to heal the city otherwise
                     obj.take_turn()
+            else:
+                TURN_NUMBER += 1
             return self.get_observation(), reward, True, game_quit
             
         # --- draw the game

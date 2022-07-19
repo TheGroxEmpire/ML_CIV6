@@ -14,17 +14,17 @@ if __name__ == '__main__':
 
     # --- Load / save setting
     enable_load = False
-    enable_save = False
+    enable_save = True
     
     # --- Set up your algorithm here
-    N_EPISODES = 500000
+    N_EPISODES = 1000
     N_TURNS = 30
     '''Algorithm list:
         - dqn
         - dueling_ddqn
         - ppo
     '''
-    algorithm_version = 'dueling_ddqn'
+    algorithm_version = 'dqn'
 
     # --- Setting up the game environment
     env = game.Game(ml_ai=True, render=False)
@@ -81,13 +81,15 @@ if __name__ == '__main__':
             done = False
             attacker_end_turn = False
             defender_end_turn = False
+            attacker_reward = 0
+            defender_reward = 0
             # print(f"Attacker turn")
             while not attacker_end_turn:
                  # --- Determine what action to take. 
                 attacker_action = attacker_agent.act(state)
                 # --- Perform that action in the environment
                 # print(f"Attacker action: {attacker_action}, turn: {step}")
-                next_state, attacker_reward, attacker_end_turn, done = env.step('attacker', attacker_action)
+                next_state, attacker_reward, attacker_end_turn, done = env.step('attacker', attacker_action, attacker_reward)
                 # --- Store state and action into memory
                 attacker_agent.remember(state, next_state, attacker_action, attacker_reward, done)
                 # --- Update the current state of the game
@@ -101,7 +103,7 @@ if __name__ == '__main__':
                 defender_action = defender_agent.act(state)
                 # --- Perform that action in the environment
                 # print(f"Defender action: {defender_action}, turn: {step}")
-                next_state, defender_reward, defender_end_turn, done = env.step('defender', defender_action)
+                next_state, defender_reward, defender_end_turn, done = env.step('defender', defender_action, defender_reward)
                 # --- Store state and action into memory
                 defender_agent.remember(state, next_state, defender_action, defender_reward, done)
                 # --- Update the current state of the game
@@ -135,7 +137,7 @@ if __name__ == '__main__':
     print(f"Training finished. Total elapsed time: {round(training_end_time-training_start_time, 2)}s")
 
     # --- Rewards vs episode plot
-    def moving_average(x, w=10000):
+    def moving_average(x, w=10):
         avg = np.convolve(x, np.ones(w), 'valid') / w
         avg = np.append(avg, np.repeat(np.nan, w-1))
         return avg
