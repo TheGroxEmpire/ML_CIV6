@@ -606,6 +606,7 @@ class Game():
                     obj.movement = obj.movement_max
             if team == 'attacker':
                 reward -= 0.5
+                print("end turn attacker")
                 for obj in CITY_OBJECTS:
                 # Check to see if the city is dead or not
                     if obj.hp >= 0:
@@ -644,7 +645,6 @@ class Game():
 
         # --- Get rewards after the city attacks, in case a unit dies
         reward += self.get_rewards(team)
-        
         # CLOCK = pygame.time.Clock()
         # CLOCK.tick(constants.GAME_FPS)
 
@@ -671,7 +671,7 @@ class Game():
                         elif obj[1].status == 'healed':
                             reward -= 0.3
                             obj[1].status = obj[1].status_default          
-
+        print(f"reward before status: {reward}")
         # --- REWARDS for own unit status
         for obj in OWN_OBJECTS[team]:
             #print('BEFORE: {} status of {}'.format(obj.name_instance, obj.status))
@@ -697,13 +697,14 @@ class Game():
                 dist = hex_distance([obj.x, obj.y], [CITY_OBJECTS[city_loc].x,CITY_OBJECTS[city_loc].y])
                 dist_reward = float(dist - 1) / (max([constants.MAP_HEIGHT, constants.MAP_WIDTH]) - 2)
                 reward -= dist_reward / 0.5
-        
+
+            print(f"reward before status: {reward}")
         # --- REWARDS for opponent unit status
-            for obj in ENEMY_OBJECTS[team]:
-                #print('BEFORE: {} status of {}'.format(obj.name_instance, obj.status))
-                if obj.status == 'dead':
-                    reward += 3
-                    obj.status = None
+        for obj in ENEMY_OBJECTS[team]:
+            #print('BEFORE: {} status of {}'.format(obj.name_instance, obj.status))
+            if obj.status == 'dead':
+                reward += 3
+                obj.status = None
 
 
         return reward
