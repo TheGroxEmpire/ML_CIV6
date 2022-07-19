@@ -27,7 +27,8 @@ class C_Sprite(pygame.sprite.Sprite):
                  hp_max = 100,
                  strength=20,
                  strength_ranged = 0,
-                 dug_in = 0):
+                 dug_in = 0,
+                 has_zoc = False):
         self.x = x
         self.y = y
         self.sprite = sprite
@@ -38,9 +39,11 @@ class C_Sprite(pygame.sprite.Sprite):
         self.strength = strength
         self.strength_ranged = strength_ranged
         self.dug_in = dug_in
+        self.has_zoc = has_zoc
         self.alive = True
         self.status = 'alive'
         self.status_default = 'alive'
+        self.entered_zoc = False
 
     def draw(self):
         """Draw the unit"""
@@ -64,7 +67,8 @@ class C_Unit(C_Sprite):
                  hp_max=100,
                  strength=20,
                  strength_ranged = 0,
-                 dug_in = 0):
+                 dug_in = 0,
+                 has_zoc = False):
                  
         super().__init__(x,
                          y,
@@ -75,7 +79,8 @@ class C_Unit(C_Sprite):
                          hp_max,
                          strength,
                          strength_ranged,
-                         dug_in)
+                         dug_in,
+                         has_zoc)
 
     def move(self,
              dx,
@@ -161,16 +166,18 @@ class C_City(C_Sprite):
                  name_instance,
                  team='defender',
                  hp=1,
-                 hp_max=100,
+                 hp_max=200,
                  wall_hp=100,
                  strength=18,
                  strength_ranged=0,
                  ranged_combat=False,
                  heal=False,
-                 dug_in = 0):
+                 dug_in = 0,
+                 has_zoc = True):
         self.wall_hp = wall_hp
         self.ranged_combat = ranged_combat
         self.heal = heal
+        self.has_zoc = has_zoc
 
         super().__init__(x,
                          y,
@@ -181,7 +188,8 @@ class C_City(C_Sprite):
                          hp_max,
                          strength,
                          strength_ranged, 
-                         dug_in)
+                         dug_in,
+                         has_zoc)
 
     def take_turn(self):
 
@@ -218,18 +226,18 @@ class C_City(C_Sprite):
             tiles_within_range = []
             for ii in range(len(temp)):
                 tiles_within_range.append(temp[ii].index)
-            # Check to make sure there are three enemy unit within one tile
+            # Check to make sure there are three enemy unit with ZOC within one tile
             items_within_range = []
             for obj in GAME_OBJECTS:
                 for tile in tiles_within_range:
-                    if obj.x == tile[0] and obj.y == tile[1] and obj.alive and obj.team != self.team:
+                    if obj.x == tile[0] and obj.y == tile[1] and obj.alive and obj.team != self.team and obj.has_zoc == True:
                         #print(f'position {obj.x} {obj.y} {obj.name_instance}')
                         items_within_range.append(temp)
 
 
             # --- Heal if less than 3 tiles are occupied
             if len(items_within_range) < 3:
-                self.hp += 10
+                self.hp += 20
                 self.status = 'healed'
                 if self.hp > self.hp_max:
                     self.hp = self.hp_max
@@ -263,15 +271,20 @@ def attack(aggressor,
     TODO: Attack accounting for walls....'''
 
     defense_bonus = target.dug_in * 3
+    fortification_bonus = 0
 
     if aggressor.strength_ranged > 0:
-        strength_diff = np.round(aggressor.strength_ranged - aggressor.hp / 10) - np.round(target.strength - target.hp / 10 + defense_bonus)
+        if target.__class__ == C_City:
+            fortification_bonus = 17
+
+        strength_diff = np.round(aggressor.strength_ranged - fortification_bonus - aggressor.hp / 10) - np.round(target.strength - target.hp / 10 + defense_bonus)
         damage_taken = 0
     else:
         strength_diff = np.round(aggressor.strength - aggressor.hp / 10) - np.round(target.strength - target.hp / 10 + defense_bonus)
         damage_taken = np.round(30 * np.exp(-strength_diff * 0.04) * (random.randint(75, 125) / 100.0))
 
     damage_out = np.round(30 * np.exp(strength_diff * 0.04) * (random.randint(75, 125) / 100.0))
+    #print(f"{aggressor.name_instance} attacked {target.name_instance} with {damage_out} damage")
     
 
     return damage_out, damage_taken
@@ -735,7 +748,8 @@ class Game():
                         team='attacker',
                         strength=20,
                         hp=100,
-                        hp_max=100)
+                        hp_max=100,
+                        has_zoc=True)
 
         A_WARRIOR_2 = C_Unit(ATTACKER_LOCATION[1][0],
                         ATTACKER_LOCATION[1][1],
@@ -744,7 +758,8 @@ class Game():
                         team='attacker',
                         strength=20,
                         hp=100,
-                        hp_max=100)
+                        hp_max=100,
+                        has_zoc=True)
 
         A_WARRIOR_3 = C_Unit(ATTACKER_LOCATION[2][0],
                         ATTACKER_LOCATION[2][1],
@@ -753,7 +768,8 @@ class Game():
                         team='attacker',
                         strength=20,
                         hp=100,
-                        hp_max=100)
+                        hp_max=100,
+                        has_zoc=True)
 
         A_SLINGER_1 = C_Unit(ATTACKER_LOCATION[3][0],
                         ATTACKER_LOCATION[3][1],
@@ -763,7 +779,8 @@ class Game():
                         strength=5,
                         strength_ranged=15,
                         hp=100,
-                        hp_max=100)
+                        hp_max=100,
+                        has_zoc=False)
 
         A_SLINGER_2 = C_Unit(ATTACKER_LOCATION[4][0],
                         ATTACKER_LOCATION[4][1],
@@ -773,7 +790,8 @@ class Game():
                         strength=5,
                         strength_ranged=15,
                         hp=100,
-                        hp_max=100)
+                        hp_max=100,
+                        has_zoc=False)
         # --- Defender units
         D_WARRIOR_1 = C_Unit(DEFENDER_LOCATION[0][0],
                         DEFENDER_LOCATION[0][1],
@@ -782,7 +800,8 @@ class Game():
                         team='defender',
                         strength=20,
                         hp=100,
-                        hp_max=100)
+                        hp_max=100,
+                        has_zoc=True)
 
         D_WARRIOR_2 = C_Unit(DEFENDER_LOCATION[1][0],
                         DEFENDER_LOCATION[1][1],
@@ -791,7 +810,8 @@ class Game():
                         team='defender',
                         strength=20,
                         hp=100,
-                        hp_max=100)
+                        hp_max=100,
+                        has_zoc=True)
 
         D_SLINGER_1 = C_Unit(DEFENDER_LOCATION[2][0],
                         DEFENDER_LOCATION[2][1],
@@ -801,17 +821,19 @@ class Game():
                         strength=5,
                         strength_ranged=15,
                         hp=100,
-                        hp_max=100)
+                        hp_max=100,
+                        has_zoc=False)
 
         CITY = C_City(constants.LOC_CITY[0],
                       constants.LOC_CITY[1],
                       constants.S_CITY,
                       "City",
                       team='defender',
-                      hp=100,
+                      hp=200,
                       strength=28,
                       ranged_combat=False,
-                      heal=True)
+                      heal=True,
+                      has_zoc=True)
 
         # Must have units first then the city last!!!
         CITY_OBJECTS = [CITY]
