@@ -43,7 +43,7 @@ class C_Sprite(pygame.sprite.Sprite):
         self.alive = True
         self.status = 'alive'
         self.status_default = 'alive'
-        self.entered_zoc = False
+        self.in_zoc = False
 
     def draw(self):
         """Draw the unit"""
@@ -135,6 +135,7 @@ class C_Unit(C_Sprite):
             if not tile_is_wall and target is None:
                 self.x += dx
                 self.y += dy
+                self.check_zoc_status()
 
     def take_damage(self,
                     damage,
@@ -156,6 +157,18 @@ class C_Unit(C_Sprite):
         #print(self.name_instance + ' is dead!')
         self.alive = False
         self.status = 'dead'
+
+    def check_zoc_status(self):
+        '''Check if unit is in ZOC'''
+        # Check for enemy with zoc that is within one tiles
+        for ii in range(-1, 1):
+            for jj in range(-1, 1):
+                temp = map_check_for_creatures(self.x - ii, self.y - jj, self)
+                if temp:
+                    if temp.__class__ == C_Unit:
+                        # --- Only add alive enemy units with ZOC
+                        if temp.alive and temp.team != self.team and temp.has_zoc:
+                            self.in_zoc = True
 
 
 class C_City(C_Sprite):
@@ -263,7 +276,6 @@ class C_City(C_Sprite):
         #print(self.name_instance + ' has been defeated!')
         self.alive = False
         self.status = 'dead'
-
 
 def attack(aggressor,
            target):
