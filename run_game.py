@@ -19,7 +19,7 @@ if __name__ == '__main__':
     enable_save = False
     
     # --- Set up your algorithm here
-    N_EPISODES = 10000
+    N_EPISODES = 100000
     N_TURNS = 30
     '''Algorithm list:
         - dqn
