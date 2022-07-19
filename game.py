@@ -651,6 +651,7 @@ class Game():
             game_quit = True
 
         # --- Get rewards after the city attacks, in case a unit dies
+        # print(f"Reward before get rewards{reward}")
         reward += self.get_rewards(team)
         # CLOCK = pygame.time.Clock()
         # CLOCK.tick(constants.GAME_FPS)
@@ -675,13 +676,13 @@ class Game():
                         elif obj[1].status == 'healed':
                             reward -= 0.3
                             obj[1].status = obj[1].status_default
-
+        # print(f"Reward before unit status: {reward}")
         # --- REWARDS for own unit status
         for obj in OWN_OBJECTS[team]:
             #print('BEFORE: {} status of {}'.format(obj.name_instance, obj.status))
             if obj.status == 'dead' and team == 'attacker':
                 reward -= 1
-                obj.status = None
+                obj.status = 'dead_2'
             elif obj.status == 'took damage':
                 reward += 0
                 obj.status = obj.status_default
@@ -694,14 +695,14 @@ class Game():
             elif obj.status == 'attacked':
                 reward += 0.2
                 obj.status = obj.status_default
-
+        # print(f"Reward after unit status: {reward}")
         # --- REWARDS for opponent unit status
         for obj in ENEMY_OBJECTS[team]:
             #print('BEFORE: {} status of {}'.format(obj.name_instance, obj.status))
-            if obj.status == 'dead':
+            if obj.status == 'dead_2':
                 reward += 3
                 obj.status = None
-
+        # print(f"Reward before final: {reward}")
         return reward
 
     def get_observation(self):

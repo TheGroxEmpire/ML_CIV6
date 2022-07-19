@@ -115,7 +115,7 @@ if __name__ == '__main__':
 
             if done:
                 break
-
+        
         # --- Replay the agent past experience
         attacker_agent.replay()
         defender_agent.replay()
