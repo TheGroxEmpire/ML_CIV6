@@ -87,14 +87,11 @@ class C_Unit(C_Sprite):
         # --- Check to see if the units is still alive
         if self.alive:
             # print(f"{self.name_instance} attempting to make a move, movement: {self.movement}")
-            if dx == 0 and dy == 0:
-                return
             if self.movement <= 0:
                 # print(f"{self.name_instance} FAILED to make a move")
-                self.status = 'attempted illegal move'
-                return
+                assert(False)
             # --- Heal and fortify the unit if it doesn't move
-            if dx == 'FORTIFY' or dy == 'FORTIFY':
+            if dx == 0 and dy == 0:
                 self.movement = 0
                 self.hp += 10
                 self.status = 'healed'
@@ -538,7 +535,7 @@ class Game():
 
             # --- handle player input
             if self.human:
-                player_action = self.game_handle_keys_human(GAME_OBJECTS[0])
+                player_action = self.game_handle_keys_human(GAME_OBJECTS[3])
 
             if player_action == 'QUIT':
                 game_quit = True
@@ -558,13 +555,15 @@ class Game():
 
     def step(self,
             team,
-            action_input=0, reward=0):
+            action_input=0, 
+            reward=0):
         """In this function we take a step for the agent in the main game."""
-        global CITY_OBJECTS, TURN_NUMBER
+        global CITY_OBJECTS, TURN_NUMBER, OWN_OBJECTS
         # --- agent action definition
         action = 'no-action'
         game_quit = False
         end_turn = False
+        unit = None
 
         if not any(obj.movement > 0 for obj in OWN_OBJECTS[team]):
             end_turn = True
@@ -581,13 +580,17 @@ class Game():
             else:
                 TURN_NUMBER += 1
             
+        for obj in OWN_OBJECTS[team]:
+            if obj.alive == True and obj.movement > 0:
+                unit = obj
+
         # --- draw the game
         if self.render:
             draw_game()
 
         if self.ml_ai and not game_quit and not end_turn:
             # --- Agent moves input
-            action = self.game_handle_moves_ml_ai(team, action_input)
+            action = self.game_handle_moves_ml_ai(action_input, unit)
             all_attacker_dead = all(obj.hp <= 0 for obj in ATTACKER_OBJECTS)
             if all_attacker_dead:
                 print("All attacker units are dead")
@@ -652,9 +655,6 @@ class Game():
                 obj.status = obj.status_default
             elif obj.status == 'attacked':
                 reward += 0.2
-                obj.status = obj.status_default
-            elif obj.status == 'attempted illegal move':
-                reward -= 1
                 obj.status = obj.status_default
 
             if team == 'attacker':
@@ -912,71 +912,19 @@ class Game():
         return 'no-action'
 
     def game_handle_moves_ml_ai(self,
-                                team,
-                                action):
-
-        global ATTACKER_OBJECTS, DEFENDER_OBJECTS
+                                action,
+                                unit):
 
         # --- Movement commands for attacker
         # --- Determine the parity
-        if team == 'attacker':
-            if ATTACKER_OBJECTS[0].y % 2 == 0:
-                parity = 'EVEN'
-            else:
-                parity = 'ODD'
-            # --- Determine the parity
-            if ATTACKER_OBJECTS[1].y % 2 == 0:
-                parity2 = 'EVEN'
-            else:
-                parity2 = 'ODD'
-            # --- Determine the parity
-            if ATTACKER_OBJECTS[2].y % 2 == 0:
-                parity3 = 'EVEN'
-            else:
-                parity3 = 'ODD'
-            if ATTACKER_OBJECTS[3].y % 2 == 0:
-                parity4 = 'EVEN'
-            else:
-                parity4 = 'ODD'
-            if ATTACKER_OBJECTS[4].y % 2 == 0:
-                parity5 = 'EVEN'
-            else:
-                parity5 = 'ODD'
-            # --- Make a movement
-            direction = constants.SINGLE_MOVEMENT_FIVE_UNITS[action]
-            ATTACKER_OBJECTS[0].move(constants.MOVEMENT_DIR[direction[0]][parity][0],
-                                    constants.MOVEMENT_DIR[direction[0]][parity][1])
-            ATTACKER_OBJECTS[1].move(constants.MOVEMENT_DIR[direction[1]][parity2][0],
-                                    constants.MOVEMENT_DIR[direction[1]][parity2][1])
-            ATTACKER_OBJECTS[2].move(constants.MOVEMENT_DIR[direction[2]][parity3][0],
-                                    constants.MOVEMENT_DIR[direction[2]][parity3][1])
-            ATTACKER_OBJECTS[3].move(constants.MOVEMENT_DIR[direction[3]][parity4][0],
-                                    constants.MOVEMENT_DIR[direction[3]][parity4][1])
-            ATTACKER_OBJECTS[4].move(constants.MOVEMENT_DIR[direction[4]][parity5][0],
-                                    constants.MOVEMENT_DIR[direction[4]][parity5][1])
+        if unit.y % 2 == 0:
+            parity = 'EVEN'
         else:
-            if DEFENDER_OBJECTS[0].y % 2 == 0:
-                parity = 'EVEN'
-            else:
-                parity = 'ODD'
-            # --- Determine the parity
-            if DEFENDER_OBJECTS[1].y % 2 == 0:
-                parity2 = 'EVEN'
-            else:
-                parity2 = 'ODD'
-            # --- Determine the parity
-            if DEFENDER_OBJECTS[2].y % 2 == 0:
-                parity3 = 'EVEN'
-            else:
-                parity3 = 'ODD'
-            # --- Make a movement
-            direction = constants.SINGLE_MOVEMENT_THREE_UNITS[action]
-            DEFENDER_OBJECTS[0].move(constants.MOVEMENT_DIR[direction[0]][parity][0],
-                                    constants.MOVEMENT_DIR[direction[0]][parity][1])
-            DEFENDER_OBJECTS[1].move(constants.MOVEMENT_DIR[direction[1]][parity2][0],
-                                    constants.MOVEMENT_DIR[direction[1]][parity2][1])
-            DEFENDER_OBJECTS[2].move(constants.MOVEMENT_DIR[direction[2]][parity3][0],
-                                    constants.MOVEMENT_DIR[direction[2]][parity3][1])
+            parity = 'ODD'
+        # --- Make a movement
+        direction = constants.MOVEMENT_ONE_UNIT[action]
+        unit.move(constants.MOVEMENT_DIR[direction][parity][0],
+                                constants.MOVEMENT_DIR[direction][parity][1])
 
         return "player-moved"
 

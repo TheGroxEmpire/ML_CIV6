@@ -14,7 +14,7 @@ if __name__ == '__main__':
 
     # --- Load / save setting
     enable_load = False
-    enable_save = True
+    enable_save = False
     
     # --- Set up your algorithm here
     N_EPISODES = 10000
@@ -24,7 +24,7 @@ if __name__ == '__main__':
         - dueling_ddqn
         - ppo
     '''
-    algorithm_version = 'dueling_ddqn'
+    algorithm_version = 'ppo'
 
     # --- Setting up the game environment
     env = game.Game(ml_ai=True, render=False)
@@ -46,10 +46,10 @@ if __name__ == '__main__':
         'dueling_ddqn': dueling_ddqn.Agent,
         'ppo': ppo.Agent
     }
-    # For attacker (5 units) it is one of 36 possibilities (5*7+1)
-    attacker_agent = algorithm_dict[algorithm_version](state, 36)
-    # For defender (3 units) it is one of 22 possibilities (3*7+1)
-    defender_agent  = algorithm_dict[algorithm_version](state, 22)
+    # Attacker action space
+    attacker_agent = algorithm_dict[algorithm_version](state, 7)
+    # Defender action space
+    defender_agent  = algorithm_dict[algorithm_version](state, 7)
 
     # --- load saved model
     if enable_load:
@@ -97,7 +97,6 @@ if __name__ == '__main__':
                 # --- Update the current state of the game
                 state = np.array(next_state)
                 
-
             # print(f"Defender turn")
             while True:
                 if done or defender_end_turn:
