@@ -20,7 +20,7 @@ if __name__ == '__main__':
     
     # --- Set up your algorithm here
     N_EPISODES = 100000
-    N_TURNS = 15
+    N_TURNS = 20
     '''Algorithm list:
         - dqn
         - dueling_ddqn
@@ -139,7 +139,7 @@ if __name__ == '__main__':
     print(f"Training finished. Total elapsed time: {round(training_end_time-training_start_time, 2)}s")
 
     # --- Rewards vs episode plot
-    def moving_average(x, w=10):
+    def moving_average(x, w=1000):
         avg = np.convolve(x, np.ones(w), 'valid') / w
         avg = np.append(avg, np.repeat(np.nan, w-1))
         return avg
