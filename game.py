@@ -1,6 +1,5 @@
 # game.py
 
-from shutil import move
 import pygame
 import constants
 import random
@@ -94,15 +93,12 @@ class C_Unit(C_Sprite):
 
         # --- Check to see if the units is still alive
         if self.alive:
-            # print(f"{self.name_instance} attempting to make a move, movement: {self.movement}")
-            if dx == 0 and dy == 0:
-                return
+            #print(f"{self.name_instance} attempting to make a move, movement: {self.movement}")
             if self.movement <= 0:
                 # print(f"{self.name_instance} FAILED to make a move")
-                self.status = 'attempted illegal move'
-                return
+                assert(False)
             # --- Heal and fortify the unit if it doesn't move
-            if dx == 'FORTIFY' or dy == 'FORTIFY':
+            if dx == 0 and dy == 0:
                 self.movement = 0
                 self.hp += 10
                 self.status = 'healed'
@@ -112,6 +108,7 @@ class C_Unit(C_Sprite):
                 # If unit is already fortified, add 1 more dug in level (max 2)
                 if self.dug_in < 2:
                     self.dug_in += 1
+                #print(f"{self.name_instance} fortifying, movement: {self.movement}")
                 return
 
             # Check to see if the movement is still "in bounds"
@@ -124,6 +121,8 @@ class C_Unit(C_Sprite):
             # --- set unit status to 'hit wall' if it hit the wall
             if tile_is_wall:
                 self.status = 'hit wall'
+                #print(f"{self.name_instance} hit a wall, movement: {self.movement}")
+                self.movement = 0
                 return
             
             target = map_check_for_creatures(self.x + dx,
@@ -150,7 +149,7 @@ class C_Unit(C_Sprite):
                 if self.strength_ranged <= 0 and target.alive == False:
                     self.x += dx
                     self.y += dy
-                # print(f"{self.name_instance} made an attack, movement: {self.movement}")
+                #print(f"{self.name_instance} made an attack, movement: {self.movement}")
                 return
 
             # --- Remove dug in bonus if unit moves
@@ -159,12 +158,14 @@ class C_Unit(C_Sprite):
 
             # --- Move the unit if it can
             if not tile_is_wall and target is None:
-                self.movement -= 1
-                self.x += dx
-                self.y += dy
-                self.check_zoc_status()
+                # If target moved into ZoC it should not be allowed to move again
+                if not (self.in_zoc and self.movement < self.movement_max):
+                    self.movement -= 1
+                    self.x += dx
+                    self.y += dy
+                    self.check_zoc_status()
 
-            # print(f"{self.name_instance} made a move, movement {self.movement}")
+            #print(f"{self.name_instance} made a move, movement {self.movement}")
     def take_damage(self,
                     damage,
                     aggressor_alive = True):
@@ -568,7 +569,7 @@ class Game():
 
             # --- handle player input
             if self.human:
-                player_action = self.game_handle_keys_human(GAME_OBJECTS[0])
+                player_action = self.game_handle_keys_human(GAME_OBJECTS[3])
 
             if player_action == 'QUIT':
                 game_quit = True
@@ -588,13 +589,15 @@ class Game():
 
     def step(self,
             team,
-            action_input=0, reward=0):
+            action_input=0, 
+            reward=0):
         """In this function we take a step for the agent in the main game."""
-        global CITY_OBJECTS, TURN_NUMBER
+        global CITY_OBJECTS, TURN_NUMBER, OWN_OBJECTS
         # --- agent action definition
         action = 'no-action'
         game_quit = False
         end_turn = False
+        unit = None
 
         if not any(obj.movement > 0 for obj in OWN_OBJECTS[team]):
             end_turn = True
@@ -602,22 +605,34 @@ class Game():
                 if obj.alive == True:
                     obj.movement = obj.movement_max
             if team == 'attacker':
-                reward -= 0.5
-                for obj in CITY_OBJECTS:
-                # Check to see if the city is dead or not
-                    if obj.hp >= 0:
+                reward -= 1
+                for obj in enumerate(CITY_OBJECTS):
+                    city_loc = obj[0]
+                     # Check to see if the city is dead or not
+                    if CITY_OBJECTS[city_loc].hp >= 0:
                         # Attempt to heal the city otherwise
-                        obj.take_turn()
+                        CITY_OBJECTS[city_loc].take_turn()
+
+                for obj in OWN_OBJECTS[team]:
+                    # --- Rewards for how far they are away from the city!
+                    # - This is a linear reward, 0 for being next to city, -0.5 for maximum distance, per unit
+                    dist = hex_distance([obj.x, obj.y], [CITY_OBJECTS[city_loc].x,CITY_OBJECTS[city_loc].y])
+                    dist_reward = float(dist - 1) / (max([constants.MAP_HEIGHT, constants.MAP_WIDTH]) - 2)
+                    reward -= dist_reward / 0.5
             else:
                 TURN_NUMBER += 1
             
+        for obj in OWN_OBJECTS[team]:
+            if obj.alive == True and obj.movement > 0:
+                unit = obj
+
         # --- draw the game
         if self.render:
             draw_game()
 
         if self.ml_ai and not game_quit and not end_turn:
             # --- Agent moves input
-            action = self.game_handle_moves_ml_ai(team, action_input)
+            action = self.game_handle_moves_ml_ai(action_input, unit)
             all_attacker_dead = all(obj.hp <= 0 for obj in ATTACKER_OBJECTS)
             if all_attacker_dead:
                 print("All attacker units are dead")
@@ -636,41 +651,38 @@ class Game():
             game_quit = True
 
         # --- Get rewards after the city attacks, in case a unit dies
+        # print(f"Reward before get rewards{reward}")
         reward += self.get_rewards(team)
-        
-        #CLOCK = pygame.time.Clock()
-        #CLOCK.tick(constants.GAME_FPS)
+        # CLOCK = pygame.time.Clock()
+        # CLOCK.tick(constants.GAME_FPS)
 
         return self.get_observation(), reward, end_turn, game_quit
 
     def get_rewards(self, team):
         '''This definition will return the attacker agent reward status for each step as
         well as the location of the city relative to the attacker agent units'''
-        global CITY_OBJECTS, ATTACKER_OBJECTS, DEFENDER_OBJECTS, OWN_OBJECTS, ENEMY_OBJECTS
-        
+        global CITY_OBJECTS, ATTACKER_OBJECTS, DEFENDER_OBJECTS, OWN_OBJECTS, ENEMY_OBJECTS    
         reward = 0
-
         
         for obj in enumerate(CITY_OBJECTS):
-                city_loc = obj[0]
                 if team == 'attacker':
                     # --- Rewards for city status
                         if obj[1].status == 'dead':
-                            reward += 10
+                            reward += 20
                             obj[1].status = None
                         elif obj[1].status == 'took damage':
                             reward += 0.5
                             obj[1].status = obj[1].status_default
                         elif obj[1].status == 'healed':
                             reward -= 0.3
-                            obj[1].status = obj[1].status_default          
-
+                            obj[1].status = obj[1].status_default
+        # print(f"Reward before unit status: {reward}")
         # --- REWARDS for own unit status
         for obj in OWN_OBJECTS[team]:
             #print('BEFORE: {} status of {}'.format(obj.name_instance, obj.status))
             if obj.status == 'dead' and team == 'attacker':
                 reward -= 1
-                obj.status = None
+                obj.status = 'dead_2'
             elif obj.status == 'took damage':
                 reward += 0
                 obj.status = obj.status_default
@@ -683,25 +695,14 @@ class Game():
             elif obj.status == 'attacked':
                 reward += 0.2
                 obj.status = obj.status_default
-            elif obj.status == 'attempted illegal move':
-                reward -= 1
-                obj.status = obj.status_default
-
-            if team == 'attacker':
-                # --- Rewards for how far they are away from the city!
-                # - This is a linear reward, 0 for being next to city, -0.5 for maximum distance, per unit
-                dist = hex_distance([obj.x, obj.y], [CITY_OBJECTS[city_loc].x,CITY_OBJECTS[city_loc].y])
-                dist_reward = float(dist - 1) / (max([constants.MAP_HEIGHT, constants.MAP_WIDTH]) - 2)
-                reward -= dist_reward / 0.5
-        
+        # print(f"Reward after unit status: {reward}")
         # --- REWARDS for opponent unit status
-            for obj in ENEMY_OBJECTS[team]:
-                #print('BEFORE: {} status of {}'.format(obj.name_instance, obj.status))
-                if obj.status == 'dead':
-                    reward += 1
-                    obj.status = None
-
-
+        for obj in ENEMY_OBJECTS[team]:
+            #print('BEFORE: {} status of {}'.format(obj.name_instance, obj.status))
+            if obj.status == 'dead' or obj.status == 'dead_2':
+                reward += 3
+                obj.status = None
+        # print(f"Reward before final: {reward}")
         return reward
 
     def get_observation(self):
@@ -951,71 +952,20 @@ class Game():
         return 'no-action'
 
     def game_handle_moves_ml_ai(self,
-                                team,
-                                action):
-
-        global ATTACKER_OBJECTS, DEFENDER_OBJECTS
+                                action,
+                                unit):
 
         # --- Movement commands for attacker
         # --- Determine the parity
-        if team == 'attacker':
-            if ATTACKER_OBJECTS[0].y % 2 == 0:
-                parity = 'EVEN'
-            else:
-                parity = 'ODD'
-            # --- Determine the parity
-            if ATTACKER_OBJECTS[1].y % 2 == 0:
-                parity2 = 'EVEN'
-            else:
-                parity2 = 'ODD'
-            # --- Determine the parity
-            if ATTACKER_OBJECTS[2].y % 2 == 0:
-                parity3 = 'EVEN'
-            else:
-                parity3 = 'ODD'
-            if ATTACKER_OBJECTS[3].y % 2 == 0:
-                parity4 = 'EVEN'
-            else:
-                parity4 = 'ODD'
-            if ATTACKER_OBJECTS[4].y % 2 == 0:
-                parity5 = 'EVEN'
-            else:
-                parity5 = 'ODD'
-            # --- Make a movement
-            direction = constants.SINGLE_MOVEMENT_FIVE_UNITS[action]
-            ATTACKER_OBJECTS[0].move(constants.MOVEMENT_DIR[direction[0]][parity][0],
-                                    constants.MOVEMENT_DIR[direction[0]][parity][1])
-            ATTACKER_OBJECTS[1].move(constants.MOVEMENT_DIR[direction[1]][parity2][0],
-                                    constants.MOVEMENT_DIR[direction[1]][parity2][1])
-            ATTACKER_OBJECTS[2].move(constants.MOVEMENT_DIR[direction[2]][parity3][0],
-                                    constants.MOVEMENT_DIR[direction[2]][parity3][1])
-            ATTACKER_OBJECTS[3].move(constants.MOVEMENT_DIR[direction[3]][parity4][0],
-                                    constants.MOVEMENT_DIR[direction[3]][parity4][1])
-            ATTACKER_OBJECTS[4].move(constants.MOVEMENT_DIR[direction[4]][parity5][0],
-                                    constants.MOVEMENT_DIR[direction[4]][parity5][1])
+        if unit.y % 2 == 0:
+            parity = 'EVEN'
         else:
-            if DEFENDER_OBJECTS[0].y % 2 == 0:
-                parity = 'EVEN'
-            else:
-                parity = 'ODD'
-            # --- Determine the parity
-            if DEFENDER_OBJECTS[1].y % 2 == 0:
-                parity2 = 'EVEN'
-            else:
-                parity2 = 'ODD'
-            # --- Determine the parity
-            if DEFENDER_OBJECTS[2].y % 2 == 0:
-                parity3 = 'EVEN'
-            else:
-                parity3 = 'ODD'
-            # --- Make a movement
-            direction = constants.SINGLE_MOVEMENT_THREE_UNITS[action]
-            DEFENDER_OBJECTS[0].move(constants.MOVEMENT_DIR[direction[0]][parity][0],
-                                    constants.MOVEMENT_DIR[direction[0]][parity][1])
-            DEFENDER_OBJECTS[1].move(constants.MOVEMENT_DIR[direction[1]][parity2][0],
-                                    constants.MOVEMENT_DIR[direction[1]][parity2][1])
-            DEFENDER_OBJECTS[2].move(constants.MOVEMENT_DIR[direction[2]][parity3][0],
-                                    constants.MOVEMENT_DIR[direction[2]][parity3][1])
+            parity = 'ODD'
+        # --- Make a movement
+        direction = constants.MOVEMENT_ONE_UNIT[action]
+        unit.move(constants.MOVEMENT_DIR[direction][parity][0],
+                                constants.MOVEMENT_DIR[direction][parity][1])
+        
 
         return "player-moved"
 

@@ -13,12 +13,12 @@ import dueling_ddqn
 if __name__ == '__main__':
 
     # --- Load / save setting
-    enable_load = False
+    enable_load = True
     enable_save = True
     
     # --- Set up your algorithm here
-    N_EPISODES = 10000
-    N_TURNS = 30
+    N_EPISODES = 100000
+    N_TURNS = 20
     '''Algorithm list:
         - dqn
         - dueling_ddqn
@@ -46,10 +46,10 @@ if __name__ == '__main__':
         'dueling_ddqn': dueling_ddqn.Agent,
         'ppo': ppo.Agent
     }
-    # For attacker (5 units) it is one of 36 possibilities (5*7+1)
-    attacker_agent = algorithm_dict[algorithm_version](state, 36)
-    # For defender (3 units) it is one of 22 possibilities (3*7+1)
-    defender_agent  = algorithm_dict[algorithm_version](state, 22)
+    # Attacker action space
+    attacker_agent = algorithm_dict[algorithm_version](state, 7)
+    # Defender action space
+    defender_agent  = algorithm_dict[algorithm_version](state, 7)
 
     # --- load saved model
     if enable_load:
@@ -97,7 +97,6 @@ if __name__ == '__main__':
                 # --- Update the current state of the game
                 state = np.array(next_state)
                 
-
             # print(f"Defender turn")
             while True:
                 if done or defender_end_turn:
@@ -114,7 +113,7 @@ if __name__ == '__main__':
 
             if done:
                 break
-
+        
         # --- Replay the agent past experience
         attacker_agent.replay()
         defender_agent.replay()
@@ -138,7 +137,7 @@ if __name__ == '__main__':
     print(f"Training finished. Total elapsed time: {round(training_end_time-training_start_time, 2)}s")
 
     # --- Rewards vs episode plot
-    def moving_average(x, w=10):
+    def moving_average(x, w=1000):
         avg = np.convolve(x, np.ones(w), 'valid') / w
         avg = np.append(avg, np.repeat(np.nan, w-1))
         return avg
