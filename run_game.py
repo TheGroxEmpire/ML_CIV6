@@ -1,8 +1,6 @@
 # run_game.py
 # Basic file how to run the game and control it with an AI
 
-import pygame
-import constants
 import csv
 import time
 import numpy as np
@@ -15,7 +13,7 @@ import dueling_ddqn
 if __name__ == '__main__':
 
     # --- Load / save setting
-    enable_load = False
+    enable_load = True
     enable_save = True
     
     # --- Set up your algorithm here

@@ -1,6 +1,6 @@
 # game.py
 
-from shutil import move
+import gym
 import pygame
 import constants
 import random
@@ -123,6 +123,7 @@ class C_Unit(C_Sprite):
             if tile_is_wall:
                 self.status = 'hit wall'
                 #print(f"{self.name_instance} hit a wall, movement: {self.movement}")
+                self.movement = 0
                 return
             
             target = map_check_for_creatures(self.x + dx,
