@@ -1,6 +1,5 @@
 # game.py
 
-import gym
 import pygame
 import constants
 import random
