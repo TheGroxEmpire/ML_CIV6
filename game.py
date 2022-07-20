@@ -668,7 +668,7 @@ class Game():
                 if team == 'attacker':
                     # --- Rewards for city status
                         if obj[1].status == 'dead':
-                            reward += 10
+                            reward += 20
                             obj[1].status = None
                         elif obj[1].status == 'took damage':
                             reward += 0.5
