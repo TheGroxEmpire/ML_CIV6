@@ -1,6 +1,7 @@
 # run_game.py
 # Basic file how to run the game and control it with an AI
 
+import tensorflow as tf
 import gym_env
 import csv
 import time
@@ -48,6 +49,8 @@ if __name__ == '__main__':
     attacker_agent = algorithm_dict[algorithm_version](state, 7)
     # Defender action space
     defender_agent  = algorithm_dict[algorithm_version](state, 7)
+
+    tensorboard_writer = tf.summary.create_file_writer(logdir="./logs")
 
     # --- load saved model
     if enable_load:
@@ -112,6 +115,7 @@ if __name__ == '__main__':
             if done:
                 break
         
+        
         # --- Replay the agent past experience
         attacker_agent.replay()
         defender_agent.replay()
@@ -121,7 +125,12 @@ if __name__ == '__main__':
         # --- Get end time
         e = time.time()
         print(f"Episode: {epoch}, time spent: {round(e-s, 2)}s")
-        # --- Save model and data value every 1000 episodes or at the last episode
+        # --- Update tensorboard reward
+        with tensorboard_writer.as_default():
+            tf.summary.scalar(name=f"attacker_reward_{algorithm_version}", data=np.mean(attacker_r[-100:]), step=epoch)
+            tf.summary.scalar(name=f"defender_reward_{algorithm_version}", data=np.mean(defender_r[-100:]), step=epoch)
+            tensorboard_writer.flush()
+        # --- Save model and data value every 100 episodes or at the last episode
         if enable_save and (epoch % 100 == 0 or epoch == episode_end-1):
             attacker_agent.save_model(f'attacker_{algorithm_version}')
             defender_agent.save_model(f'defender_{algorithm_version}')
@@ -130,10 +139,10 @@ if __name__ == '__main__':
                 writer = csv.writer(csvfile)
                 writer.writerow(attacker_r)
                 writer.writerow(defender_r)
-        
+
+    env.close()    
     training_end_time = time.time()
     print(f"Training finished. Total elapsed time: {round(training_end_time-training_start_time, 2)}s")
-
     # --- Rewards vs episode plot
     def moving_average(x, w=1000):
         avg = np.convolve(x, np.ones(w), 'valid') / w
