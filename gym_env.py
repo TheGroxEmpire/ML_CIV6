@@ -549,8 +549,9 @@ class GymEnv(gym.Env):
         
         if action == 'QUIT':
             game_quit = True
-        
+          
         self._renderer.render_step()
+        self.get_rewards(team)
 
         return self.get_observation(), reward, end_turn, game_quit
 
