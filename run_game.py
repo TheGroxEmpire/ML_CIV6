@@ -1,10 +1,12 @@
 # run_game.py
 # Basic file how to run the game and control it with an AI
 
+import game
+import gym_env
+
 import csv
 import time
 import numpy as np
-import game
 import matplotlib.pyplot as plt
 import ppo
 import dqn
@@ -13,8 +15,8 @@ import dueling_ddqn
 if __name__ == '__main__':
 
     # --- Load / save setting
-    enable_load = True
-    enable_save = True
+    enable_load = False
+    enable_save = False
     
     # --- Set up your algorithm here
     N_EPISODES = 100000
@@ -26,10 +28,8 @@ if __name__ == '__main__':
     '''
     algorithm_version = 'dueling_ddqn'
 
-    # --- Setting up the game environment
-    env = game.Game(ml_ai=True, render=False)
-    env.game_initialize(ep_number=0)
-
+    env = gym_env.GymEnv("hide")
+    env.reset()
     # --- Get the current state of the game by calling get_observation_X
     # FORMAT: city health, dx unit 1, dy unit 1, hp_norm unit 1, dx unit 2, dy unit 2, hp_norm unit 2, ...
     # with three units this will be a list of length 10
@@ -72,7 +72,7 @@ if __name__ == '__main__':
     for epoch in range(episode_start, episode_end):
 
         # --- Initialize the game by putting units and city on the playing field, etc.
-        env.game_initialize(ep_number=epoch)
+        env.reset()
         state = np.array(env.get_observation())
 
         # --- Get start time

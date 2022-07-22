@@ -48,7 +48,7 @@ class C_Sprite(pygame.sprite.Sprite):
         self.status_default = 'alive'
         self.in_zoc = False
 
-    def draw(self):
+    def draw(self, game_map):
         """Draw the unit"""
 
         global GAME_MAP
