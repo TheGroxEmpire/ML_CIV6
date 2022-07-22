@@ -14,7 +14,7 @@ if __name__ == '__main__':
 
     # --- Load / save setting
     enable_load = False
-    enable_save = False
+    enable_save = True
     
     # --- Set up your algorithm here
     N_EPISODES = 100000
@@ -24,9 +24,9 @@ if __name__ == '__main__':
         - dueling_ddqn
         - ppo
     '''
-    algorithm_version = 'dueling_ddqn'
+    algorithm_version = 'ppo'
 
-    env = gym_env.GymEnv("show")
+    env = gym_env.GymEnv("hide")
     env.reset()
     # --- Get the current state of the game by calling get_observation_X
     # FORMAT: city health, dx unit 1, dy unit 1, hp_norm unit 1, dx unit 2, dy unit 2, hp_norm unit 2, ...
