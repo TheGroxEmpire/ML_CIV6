@@ -1,9 +1,7 @@
 # run_game.py
 # Basic file how to run the game and control it with an AI
 
-import game
 import gym_env
-
 import csv
 import time
 import numpy as np
@@ -28,7 +26,7 @@ if __name__ == '__main__':
     '''
     algorithm_version = 'dueling_ddqn'
 
-    env = gym_env.GymEnv("hide")
+    env = gym_env.GymEnv("show")
     env.reset()
     # --- Get the current state of the game by calling get_observation_X
     # FORMAT: city health, dx unit 1, dy unit 1, hp_norm unit 1, dx unit 2, dy unit 2, hp_norm unit 2, ...
