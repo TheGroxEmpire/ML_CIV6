@@ -15,7 +15,7 @@ import dueling_ddqn
 if __name__ == '__main__':
 
     # --- Load / save setting
-    enable_load = False
+    enable_load = True
     enable_save = True
     
     # --- Set up your algorithm here
