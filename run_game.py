@@ -15,7 +15,7 @@ import dueling_ddqn
 if __name__ == '__main__':
 
     # --- Load / save setting
-    enable_load = False
+    enable_load = True
     enable_save = True
     
     # --- Set up your algorithm here
@@ -30,7 +30,7 @@ if __name__ == '__main__':
     '''
     algorithm_version = 'dueling_ddqn'
 
-    comment_suffix = "a(3w2s)-d(0)_0.00005-lr"
+    comment_suffix = "a(3w2s)-d(0)_256-batches"
 
     env = gym_env.GymEnv("hide")
     env.reset()
@@ -44,14 +44,14 @@ if __name__ == '__main__':
     defender_r = np.array([])
     episodes = np.array([])
 
-    # --- instantiate agents
+    # --- instantiate agentss
     algorithm_dict = {
         'dqn': dqn.Agent,
         'dueling_ddqn': dueling_ddqn.Agent,
         'ppo': ppo.Agent,
     }
     # Attacker action space
-    attacker_agent = algorithm_dict[algorithm_version](state, 7, PER=False, lr = 0.00005)
+    attacker_agent = algorithm_dict[algorithm_version](state, 7, PER=False, batch_size=256)
     # Defender action space
     defender_agent  = algorithm_dict[algorithm_version](state, 7, PER=False)
 
