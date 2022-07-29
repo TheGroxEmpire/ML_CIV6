@@ -441,7 +441,7 @@ class GymEnv(gym.Env):
                                     A_WARRIOR_1, A_WARRIOR_2, A_WARRIOR_3, A_SLINGER_1, A_SLINGER_2
                                 ]
         self.defender_objects = [
-                                    #D_WARRIOR_1, D_WARRIOR_2, D_SLINGER_1
+                                    D_WARRIOR_1, D_WARRIOR_2, D_SLINGER_1
                                 ]
         self.game_objects = self.attacker_objects + self.defender_objects + self.city_objects
         self.own_objects = {'attacker': self.attacker_objects,
