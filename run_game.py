@@ -119,7 +119,7 @@ if __name__ == '__main__':
                 defender_agent.remember(state, next_state, defender_action, defender_reward, done)
                 # --- Update the current state of the game
                 state = np.array(next_state)
-                defender_reward_episode += attacker_reward
+                defender_reward_episode += defender_reward
 
             if done:
                 break
