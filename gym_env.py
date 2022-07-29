@@ -390,39 +390,39 @@ class GymEnv(gym.Env):
                         movement_max=2,
                         has_zoc=False)
         # --- Defender units
-        D_WARRIOR_1 = C_Unit(self.defender_location[0][0],
-                        self.defender_location[0][1],
-                        constants.S_WARRIOR,
-                        "D_warrior_1",
-                        team='defender',
-                        strength=20,
-                        hp=100,
-                        hp_max=100,
-                        movement_max=2,
-                        has_zoc=True)
+        # D_WARRIOR_1 = C_Unit(self.defender_location[0][0],
+        #                 self.defender_location[0][1],
+        #                 constants.S_WARRIOR,
+        #                 "D_warrior_1",
+        #                 team='defender',
+        #                 strength=20,
+        #                 hp=100,
+        #                 hp_max=100,
+        #                 movement_max=2,
+        #                 has_zoc=True)
 
-        D_WARRIOR_2 = C_Unit(self.defender_location[1][0],
-                        self.defender_location[1][1],
-                        constants.S_WARRIOR,
-                        "D_warrior_2",
-                        team='defender',
-                        strength=20,
-                        hp=100,
-                        hp_max=100,
-                        movement_max=2,
-                        has_zoc=True)
+        # D_WARRIOR_2 = C_Unit(self.defender_location[1][0],
+        #                 self.defender_location[1][1],
+        #                 constants.S_WARRIOR,
+        #                 "D_warrior_2",
+        #                 team='defender',
+        #                 strength=20,
+        #                 hp=100,
+        #                 hp_max=100,
+        #                 movement_max=2,
+        #                 has_zoc=True)
 
-        D_SLINGER_1 = C_Unit(self.defender_location[2][0],
-                        self.defender_location[2][1],
-                        constants.S_SLINGER,
-                        "D_slinger_1",
-                        team='defender',
-                        strength=5,
-                        strength_ranged=15,
-                        hp=100,
-                        hp_max=100,
-                        movement_max=2,
-                        has_zoc=False)
+        # D_SLINGER_1 = C_Unit(self.defender_location[2][0],
+        #                 self.defender_location[2][1],
+        #                 constants.S_SLINGER,
+        #                 "D_slinger_1",
+        #                 team='defender',
+        #                 strength=5,
+        #                 strength_ranged=15,
+        #                 hp=100,
+        #                 hp_max=100,
+        #                 movement_max=2,
+        #                 has_zoc=False)
 
         CITY = C_City(constants.LOC_CITY[0],
                       constants.LOC_CITY[1],
@@ -438,7 +438,9 @@ class GymEnv(gym.Env):
         # Must have units first then the city last
         self.city_objects = [CITY]
         self.attacker_objects = [A_WARRIOR_1, A_WARRIOR_2, A_WARRIOR_3, A_SLINGER_1, A_SLINGER_2]
-        self.defender_objects = [D_WARRIOR_1, D_WARRIOR_2, D_SLINGER_1]
+        self.defender_objects = [
+                                #D_WARRIOR_1, D_WARRIOR_2, D_SLINGER_1
+                                ]
         self.game_objects = self.attacker_objects + self.defender_objects + self.city_objects
         self.own_objects = {'attacker': self.attacker_objects,
                             'defender': self.defender_objects}

@@ -1,6 +1,7 @@
 # run_game.py
 # Basic file how to run the game and control it with an AI
 
+import os
 import tensorflow as tf
 import gym_env
 import csv
@@ -18,14 +19,18 @@ if __name__ == '__main__':
     enable_save = True
     
     # --- Set up your algorithm here
-    N_EPISODES = 100000
+    N_EPISODES = 350000
     N_TURNS = 20
     '''Algorithm list:
         - dqn
+        - dqn_PER
         - dueling_ddqn
+        - dueling_ddqn_PER
         - ppo
     '''
-    algorithm_version = 'ppo'
+    algorithm_version = 'dueling_ddqn'
+
+    comment_suffix = "a(3w2s)-d(0)_0.00005-lr"
 
     env = gym_env.GymEnv("hide")
     env.reset()
@@ -43,25 +48,28 @@ if __name__ == '__main__':
     algorithm_dict = {
         'dqn': dqn.Agent,
         'dueling_ddqn': dueling_ddqn.Agent,
-        'ppo': ppo.Agent
+        'ppo': ppo.Agent,
     }
     # Attacker action space
-    attacker_agent = algorithm_dict[algorithm_version](state, 7)
+    attacker_agent = algorithm_dict[algorithm_version](state, 7, PER=False, lr = 0.00005)
     # Defender action space
-    defender_agent  = algorithm_dict[algorithm_version](state, 7)
+    defender_agent  = algorithm_dict[algorithm_version](state, 7, PER=False)
 
-    tensorboard_writer = tf.summary.create_file_writer(logdir="./logs")
+    if enable_save:
+        if not os.path.exists(f"./logs/{algorithm_version}_{comment_suffix}"):
+            os.makedirs(f"./logs/{algorithm_version}_{comment_suffix}")
+        tensorboard_writer = tf.summary.create_file_writer(logdir=f"./logs/{algorithm_version}_{comment_suffix}")
 
     # --- load saved model
     if enable_load:
-        with open(f"./plots/{algorithm_version}.csv") as f:
+        with open(f"./plots/{algorithm_version}_{comment_suffix}.csv") as f:
             lines = list(csv.reader(f))
         lines = np.array(lines, float)
         attacker_r, defender_r = lines[:2]
         # Cumulative episodes is the number of episode from previous load. If there's nothing to load, start at 0
         cumulative_episodes = len(attacker_r)
-        attacker_agent.load_model(f'attacker_{algorithm_version}')
-        defender_agent.load_model(f'defender_{algorithm_version}')
+        attacker_agent.load_model(f'attacker_{algorithm_version}_{comment_suffix}')
+        defender_agent.load_model(f'defender_{algorithm_version}_{comment_suffix}')
         print("Continuing from last save data")
        
     else:
@@ -126,19 +134,21 @@ if __name__ == '__main__':
         e = time.time()
         print(f"Episode: {epoch}, time spent: {round(e-s, 2)}s")
         # --- Update tensorboard reward
-        with tensorboard_writer.as_default():
-            tf.summary.scalar(name=f"attacker_reward_{algorithm_version}", data=np.mean(attacker_r[-100:]), step=epoch)
-            tf.summary.scalar(name=f"defender_reward_{algorithm_version}", data=np.mean(defender_r[-100:]), step=epoch)
-            tensorboard_writer.flush()
+        
         # --- Save model and data value every 100 episodes or at the last episode
         if enable_save and (epoch % 100 == 0 or epoch == episode_end-1):
-            attacker_agent.save_model(f'attacker_{algorithm_version}')
-            defender_agent.save_model(f'defender_{algorithm_version}')
+            attacker_agent.save_model(f'attacker_{algorithm_version}_{comment_suffix}')
+            defender_agent.save_model(f'defender_{algorithm_version}_{comment_suffix}')
 
-            with open(f"./plots/{algorithm_version}.csv", 'w', newline='') as csvfile:
+            with open(f"./plots/{algorithm_version}_{comment_suffix}.csv", 'w', newline='') as csvfile:
                 writer = csv.writer(csvfile)
                 writer.writerow(attacker_r)
                 writer.writerow(defender_r)
+
+            with tensorboard_writer.as_default():
+                tf.summary.scalar(name=f"attacker_reward", data=np.mean(attacker_r[-100:]), step=epoch)
+                tf.summary.scalar(name=f"defender_reward", data=np.mean(defender_r[-100:]), step=epoch)
+                tensorboard_writer.flush()
 
     env.close()    
     training_end_time = time.time()
@@ -151,10 +161,10 @@ if __name__ == '__main__':
 
     plt.plot(moving_average(attacker_r), label='Attacker rewards')
     plt.plot(moving_average(defender_r), label='Defender rewards')
-    plt.title(f"{algorithm_version} Rewards vs Episodes")
+    plt.title(f"{algorithm_version}_{comment_suffix}")
     plt.legend() 
     if enable_save:
-        plt.savefig(f"plots/rewards_vs_episodes_{algorithm_version}.png")
+        plt.savefig(f"plots/rewards_vs_episodes_{algorithm_version}_{comment_suffix}.png")
 
     plt.show()
     

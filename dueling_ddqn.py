@@ -30,42 +30,6 @@ class DuelingDeepQNetwork(keras.Model):
 
         return A
 
-
-class ReplayBuffer():
-    def __init__(self, max_size, input_shape):
-        self.mem_size = max_size
-        self.mem_cntr = 0
-
-        self.state_memory = np.zeros((self.mem_size, *input_shape),
-                                        dtype=np.float32)
-        self.new_state_memory = np.zeros((self.mem_size, *input_shape),
-                                        dtype=np.float32)
-        self.action_memory = np.zeros(self.mem_size, dtype=np.int32)
-        self.reward_memory = np.zeros(self.mem_size, dtype=np.float32)
-        self.terminal_memory = np.zeros(self.mem_size, dtype=bool)
-
-    def remember(self, state, state_, action, reward, done):
-        index = self.mem_cntr % self.mem_size
-        self.state_memory[index] = state
-        self.new_state_memory[index] = state_
-        self.action_memory[index] = action
-        self.reward_memory[index] = reward
-        self.terminal_memory[index] = done
-
-        self.mem_cntr += 1
-
-    def sample_buffer(self, batch_size):
-        max_mem = min(self.mem_cntr, self.mem_size)
-        batch = np.random.choice(max_mem, batch_size, replace=False)
-
-        states = self.state_memory[batch]
-        new_states = self.new_state_memory[batch]
-        actions = self.action_memory[batch]
-        rewards = self.reward_memory[batch]
-        dones = self.terminal_memory[batch]
-
-        return states, actions, rewards, new_states, dones
-
 class Agent(dqn.Agent):
     def __init__(self, state, 
                 n_actions, 
@@ -75,10 +39,13 @@ class Agent(dqn.Agent):
                 batch_size=64,
                 eps_dec=1e-3, 
                 eps_min=0.01, 
-                mem_size=100000, 
+                mem_size=100000,
+                PER=True,
+                alpha=0.6,
+                beta=0.4, 
                 fc1_dims=256,
                 fc2_dims=256, 
-                replace=100):
+                replace=1000):
 
         super().__init__(state, 
                 n_actions, 
@@ -87,11 +54,19 @@ class Agent(dqn.Agent):
                 epsilon, 
                 batch_size, 
                 eps_dec, 
-                eps_min)
+                eps_min,
+                mem_size,
+                PER,
+                alpha,
+                beta)
 
         self.replace = replace
         self.learn_step_counter = 0
-        self.memory = ReplayBuffer(mem_size, state.shape)
+        if self.PER:
+            self.memory = dqn.ReplayBufferPER(mem_size, state.shape, self.alpha)
+        else:
+            self.memory = dqn.ReplayBuffer(mem_size, state.shape)
+            
         self.q_eval = DuelingDeepQNetwork(n_actions, fc1_dims, fc2_dims)
         self.q_next = DuelingDeepQNetwork(n_actions, fc1_dims, fc2_dims)
 
@@ -117,8 +92,12 @@ class Agent(dqn.Agent):
         if self.learn_step_counter % self.replace == 0:
             self.q_next.set_weights(self.q_eval.get_weights())
 
-        states, actions, rewards, states_, dones = \
-                                    self.memory.sample_buffer(self.batch_size)
+        if self.PER:
+            indexes, states, actions, rewards, states_, dones = \
+                self.memory.sample_buffer(self.batch_size, self.beta)
+        else:
+            states, actions, rewards, states_, dones = \
+                self.memory.sample_buffer(self.batch_size)
 
         q_pred = self.q_eval(states)
         q_next = self.q_next(states_)
