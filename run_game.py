@@ -15,7 +15,7 @@ import dueling_ddqn
 if __name__ == '__main__':
 
     # --- Load / save setting
-    enable_load = True
+    enable_load = False
     enable_save = True
     
     # --- Set up your algorithm here
@@ -23,14 +23,12 @@ if __name__ == '__main__':
     N_TURNS = 20
     '''Algorithm list:
         - dqn
-        - dqn_PER
         - dueling_ddqn
-        - dueling_ddqn_PER
         - ppo
     '''
     algorithm_version = 'dueling_ddqn'
 
-    comment_suffix = "a(3w2s)-d(0)_256-batches"
+    comment_suffix = "a(3w2s)-d(2w1s)_0.5-lr"
 
     env = gym_env.GymEnv("hide")
     env.reset()
@@ -51,9 +49,9 @@ if __name__ == '__main__':
         'ppo': ppo.Agent,
     }
     # Attacker action space
-    attacker_agent = algorithm_dict[algorithm_version](state, 7, PER=False, batch_size=256)
+    attacker_agent = algorithm_dict[algorithm_version](state, 7, lr=0.5)
     # Defender action space
-    defender_agent  = algorithm_dict[algorithm_version](state, 7, PER=False)
+    defender_agent  = algorithm_dict[algorithm_version](state, 7, lr=0.5)
 
     if enable_save:
         if not os.path.exists(f"./logs/{algorithm_version}_{comment_suffix}"):
@@ -90,21 +88,23 @@ if __name__ == '__main__':
             done = False
             attacker_end_turn = False
             defender_end_turn = False
-            attacker_reward = 0
-            defender_reward = 0
+            attacker_reward_episode = 0
+            defender_reward_episode = 0
             # print(f"Attacker turn")
             while True:
                 if done or attacker_end_turn:
                     break
-                 # --- Determine what action to take. 
+                 # --- Determine what action to take.  
                 attacker_action = attacker_agent.act(state)
                 # --- Perform that action in the environment
                 # print(f"Attacker action: {attacker_action}, turn: {step}")
-                next_state, attacker_reward, attacker_end_turn, done = env.step('attacker', attacker_action, attacker_reward)
+                next_state, attacker_reward, attacker_end_turn, done = env.step('attacker', attacker_action)
                 # --- Store state and action into memory
                 attacker_agent.remember(state, next_state, attacker_action, attacker_reward, done)
                 # --- Update the current state of the game
                 state = np.array(next_state)
+                # --- Store reward for plots
+                attacker_reward_episode += attacker_reward
                 
             # print(f"Defender turn")
             while True:
@@ -114,22 +114,22 @@ if __name__ == '__main__':
                 defender_action = defender_agent.act(state)
                 # --- Perform that action in the environment
                 # print(f"Defender action: {defender_action}, turn: {step}")
-                next_state, defender_reward, defender_end_turn, done = env.step('defender', defender_action, defender_reward)
+                next_state, defender_reward, defender_end_turn, done = env.step('defender', defender_action)
                 # --- Store state and action into memory
                 defender_agent.remember(state, next_state, defender_action, defender_reward, done)
                 # --- Update the current state of the game
                 state = np.array(next_state)
+                defender_reward_episode += attacker_reward
 
             if done:
                 break
-        
         
         # --- Replay the agent past experience
         attacker_agent.replay()
         defender_agent.replay()
         # --- Store latest reward
-        attacker_r = np.append(attacker_r, attacker_reward)
-        defender_r = np.append(defender_r, defender_reward) 
+        attacker_r = np.append(attacker_r, attacker_reward_episode)
+        defender_r = np.append(defender_r, defender_reward_episode) 
         # --- Get end time
         e = time.time()
         print(f"Episode: {epoch}, time spent: {round(e-s, 2)}s")
