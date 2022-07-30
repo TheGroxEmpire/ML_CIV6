@@ -39,13 +39,13 @@ class Agent(dqn.Agent):
                 batch_size=64,
                 eps_dec=1e-3, 
                 eps_min=0.01, 
-                mem_size=10000,
+                mem_size=1000000,
                 PER=False,
                 alpha=0.6,
                 beta=0.4, 
                 fc1_dims=256,
                 fc2_dims=256, 
-                replace=1000):
+                replace=100):
 
         super().__init__(state, 
                 n_actions, 
