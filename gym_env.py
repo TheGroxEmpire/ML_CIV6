@@ -591,7 +591,6 @@ class GymEnv(gym.Env):
     # UNIT ACTION
     # ---------------------------------------------
     def city_take_turn(self, city):
-
         if city.ranged_combat:
             # Check for a creature that is within two tiles
             items_within_range = []
@@ -638,6 +637,7 @@ class GymEnv(gym.Env):
                 city.status = 'healed'
                 if city.hp > city.hp_max:
                     city.hp = city.hp_max
+
     def move(self,
              unit,
              dx,
