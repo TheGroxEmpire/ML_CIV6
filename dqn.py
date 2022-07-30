@@ -170,7 +170,7 @@ class Agent():
                 batch_size=64,
                 eps_dec=1e-3, 
                 eps_min=0.01,
-                mem_size=100000,
+                mem_size=10000,
                 PER=False,
                 alpha=0.6,
                 beta=0.4):
