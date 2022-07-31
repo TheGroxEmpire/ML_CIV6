@@ -443,7 +443,7 @@ class GymEnv(gym.Env):
                                     A_WARRIOR_1, A_WARRIOR_2, A_WARRIOR_3, A_SLINGER_1, A_SLINGER_2
                                 ]
         self.defender_objects = [
-                                    D_WARRIOR_1, D_WARRIOR_2, D_SLINGER_1
+                                    #D_WARRIOR_1, D_WARRIOR_2, D_SLINGER_1
                                 ]
         self.game_objects = self.attacker_objects + self.defender_objects + self.city_objects
         self.own_objects = {'attacker': self.attacker_objects,
@@ -533,8 +533,7 @@ class GymEnv(gym.Env):
                         dist = hex_distance([obj.x, obj.y], [self.city_objects[city_loc].x, self.city_objects[city_loc].y])
                         dist_reward = float(dist - 1) / (max([constants.MAP_HEIGHT, constants.MAP_WIDTH]) - 2)
                         reward -= dist_reward / 0.5
-            else:
-                self.turn_number += 1
+            self.turn_number += 1
         
         for obj in self.own_objects[team]:
             if obj.alive == True and obj.movement > 0:
