@@ -45,7 +45,7 @@ class Agent(dqn.Agent):
                 beta=0.4, 
                 fc1_dims=256,
                 fc2_dims=256, 
-                replace=100):
+                replace=1000):
 
         super().__init__(state, 
                 n_actions, 
