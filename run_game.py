@@ -49,7 +49,7 @@ if __name__ == '__main__':
         'ppo': ppo.Agent,
     }
     # Attacker action space
-    attacker_agent = algorithm_dict[algorithm_version](state, 7, )
+    attacker_agent = algorithm_dict[algorithm_version](state, 7)
     # Defender action space
     defender_agent  = algorithm_dict[algorithm_version](state, 7)
 
