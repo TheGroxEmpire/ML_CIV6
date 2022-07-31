@@ -3,7 +3,7 @@
 
 import os
 import tensorflow as tf
-import gym_env
+import pettingzoo_env
 import csv
 import time
 import numpy as np
@@ -15,8 +15,8 @@ import dueling_ddqn
 if __name__ == '__main__':
 
     # --- Load / save setting
-    enable_load = True
-    enable_save = True
+    enable_load = False
+    enable_save = False
     
     # --- Set up your algorithm here
     N_EPISODES = 350000
@@ -30,12 +30,12 @@ if __name__ == '__main__':
 
     comment_suffix = "a(3w2s)-d(2w1s)_default"
 
-    env = gym_env.GymEnv("hide")
+    env = pettingzoo_env.PettingZooEnv("show")
     env.reset()
     # --- Get the current state of the game by calling get_observation_X
     # FORMAT: city health, dx unit 1, dy unit 1, hp_norm unit 1, dx unit 2, dy unit 2, hp_norm unit 2, ...
     # with three units this will be a list of length 10
-    state = np.array(env.get_observation())
+    state = np.array(env.observe("attacker"))
 
     # --- Data list for plot
     attacker_r = np.array([])
@@ -52,6 +52,11 @@ if __name__ == '__main__':
     attacker_agent = algorithm_dict[algorithm_version](state, 7)
     # Defender action space
     defender_agent  = algorithm_dict[algorithm_version](state, 7)
+
+    agent_dict = {
+        'attacker' : attacker_agent,
+        'defender' : defender_agent
+    }
 
     if enable_save:
         if not os.path.exists(f"./logs/{algorithm_version}_{comment_suffix}"):
@@ -77,53 +82,32 @@ if __name__ == '__main__':
     episode_start = cumulative_episodes+1
     episode_end = cumulative_episodes+N_EPISODES+1
     for epoch in range(episode_start, episode_end):
-
         # --- Initialize the game by putting units and city on the playing field, etc.
         env.reset()
-        state = np.array(env.get_observation())
-
         # --- Get start time
         s = time.time()
         for step in range(N_TURNS):
-            done = False
-            attacker_end_turn = False
-            defender_end_turn = False
             attacker_reward_episode = 0
             defender_reward_episode = 0
-            # print(f"Attacker turn")
-            while True:
-                if done or attacker_end_turn:
-                    break
-                 # --- Determine what action to take.  
-                attacker_action = attacker_agent.act(state)
-                # --- Perform that action in the environment
-                # print(f"Attacker action: {attacker_action}, turn: {step}")
-                next_state, attacker_reward, attacker_end_turn, done = env.step('attacker', attacker_action)
-                # --- Store state and action into memory
-                attacker_agent.remember(state, next_state, attacker_action, attacker_reward, done)
-                # --- Update the current state of the game
+            for agent in env.agent_iter():
+                print(f"{agent} turn")
+                next_state, reward, done, info = env.last()
+                action = agent_dict[agent].act(state)
+                agent_dict[agent].remember(state, next_state, action, action, done)
+                env.step(action)
                 state = np.array(next_state)
-                # --- Store reward for plots
-                attacker_reward_episode += attacker_reward
-                
-            # print(f"Defender turn")
-            while True:
-                if done or defender_end_turn:
+                if agent == 'attacker':
+                    attacker_reward_episode += reward
+                else:
+                    defender_reward_episode += reward
                     break
-                 # --- Determine what action to take. 
-                defender_action = defender_agent.act(state)
-                # --- Perform that action in the environment
-                # print(f"Defender action: {defender_action}, turn: {step}")
-                next_state, defender_reward, defender_end_turn, done = env.step('defender', defender_action)
-                # --- Store state and action into memory
-                defender_agent.remember(state, next_state, defender_action, defender_reward, done)
-                # --- Update the current state of the game
-                state = np.array(next_state)
-                defender_reward_episode += defender_reward
+
+                if done:
+                    break
 
             if done:
                 break
-        
+
         # --- Replay the agent past experience
         attacker_agent.replay()
         defender_agent.replay()

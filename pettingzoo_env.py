@@ -1,9 +1,11 @@
-import gym
+from pettingzoo import AECEnv
+from pettingzoo.utils import agent_selector
 from gym import spaces
 from gym.utils.renderer import Renderer
 import pygame
 import numpy as np
 import random
+import functools
 
 import constants
 import class_hex
@@ -185,6 +187,8 @@ class C_Unit(C_Sprite):
         else:
             self.hp -= damage
         #self.status = 'took damage'
+        if self.hp <= 0:
+            self.death_unit()
 
 
 class C_City(C_Sprite):
@@ -264,15 +268,20 @@ def attack(aggressor,
 
     return damage_out, damage_taken
 
-class GymEnv(gym.Env):
+class PettingZooEnv(AECEnv):
     metadata = {"render_modes": ["show", "hide"], "render_fps": 4}
 
     def __init__(self, render_mode=None):
-        self.observation_space = spaces.Discrete(36)
+        self.possible_agents = ["attacker", "defender"]
+        self.observation_space = {
+            agent: spaces.Discrete(36) for agent in self.possible_agents
+        }
 
         # We have 7 actions for each unit
-        self.action_space = spaces.Discrete(7)
-
+        self.action_space = {
+            agent: spaces.Discrete(7) for agent in self.possible_agents
+        }
+        
         assert render_mode is None or render_mode in self.metadata["render_modes"]
         self.render_mode = render_mode
         self._renderer = Renderer(self.render_mode, self._render_frame)
@@ -286,8 +295,17 @@ class GymEnv(gym.Env):
         """
         self.surface_main = None
         self.clock = None
+    
+    @functools.lru_cache(maxsize=None)
+    def observation_space(self, agent):
+        # Gym spaces are defined and documented here: https://gym.openai.com/docs/#spaces
+        return spaces.Discrete(36)
 
-    def get_observation(self):
+    @functools.lru_cache(maxsize=None)
+    def action_space(self, agent):
+        return spaces.Discrete(7)
+
+    def observe(self, agent):
         '''Definition returns the known universe
         positions of each unit and each city
         '''
@@ -323,10 +341,19 @@ class GymEnv(gym.Env):
 
     def reset(self, ep_number = 0, seed=None):
         # We need the following line to seed self.np_random
-        super().reset(seed=seed)
-
-        episode_number = ep_number
+        self.surface_main = None
+        self.clock = None
+        self.agents = self.possible_agents[:]
+        self.rewards = {agent: 0 for agent in self.agents}
+        self._cumulative_rewards = {agent: 0 for agent in self.agents}
+        self.dones = {agent: False for agent in self.agents}
+        self.infos = {agent: {} for agent in self.agents}
+        self.state = {agent: None for agent in self.agents}
+        self.observations = {agent: None for agent in self.agents}
         self.turn_number = 0
+
+        self._agent_selector = agent_selector(self.agents)
+        self.agent_selection = self._agent_selector.next()
 
         # Choose the agents' location
         self.attacker_location = random.sample(constants.HEX_LOCATIONS_ATTACKER, 5)
@@ -449,12 +476,8 @@ class GymEnv(gym.Env):
         self.enemy_objects = {'attacker': self.defender_objects,
                               'defender': self.attacker_objects}
 
-        observation = self.get_observation()
-
         self._renderer.reset()
         self._renderer.render_step()
-
-        return observation
 
     def get_rewards(self, team):
         '''This definition will return the attacker agent reward status for each step as
@@ -501,23 +524,31 @@ class GymEnv(gym.Env):
         # print(f"Reward before final: {reward}")
         return reward
 
-    def step(self, 
-             team, 
+    def step(self,
              action_input=0):
         # --- agent action definition
         action = 'no-action'
         game_quit = False
         end_turn = False
         unit = None
-        reward = 0
+        if self.dones[self.agent_selection]:
+            # handles stepping an agent which is already done
+            # accepts a None action for the one agent, and moves the agent_selection to
+            # the next done agent,  or if there are no more done agents, to the next live agent
+            return self._was_done_step(action)
+        
+        agent = self.agent_selection
+        self._cumulative_rewards[agent] = 0
 
-        if not any(obj.movement > 0 for obj in self.own_objects[team]):
+        self.state[self.agent_selection] = action
+
+        if not any(obj.movement > 0 for obj in self.own_objects[agent]):
             end_turn = True
-            for obj in self.own_objects[team]:
+            for obj in self.own_objects[agent]:
                 if obj.alive == True:
                     obj.movement = obj.movement_max
-            if team == 'attacker':
-                reward -= 1
+            if agent == 'attacker':
+                self.rewards[agent] -= 1
                 for obj in enumerate(self.city_objects):
                     city_loc = obj[0]
                      # Check to see if the city is dead or not
@@ -525,16 +556,16 @@ class GymEnv(gym.Env):
                         # Attempt to heal the city otherwise
                         self.city_take_turn(self.city_objects[city_loc])
 
-                for obj in self.own_objects[team]:
+                for obj in self.own_objects[agent]:
                         # --- Rewards for how far they are away from the city!
                         # - This is a linear reward, 0 for being next to city, -0.5 for maximum distance, per unit
                         dist = hex_distance([obj.x, obj.y], [self.city_objects[city_loc].x, self.city_objects[city_loc].y])
                         dist_reward = float(dist - 1) / (max([constants.MAP_HEIGHT, constants.MAP_WIDTH]) - 2)
-                        reward -= dist_reward / 0.5
+                        self.rewards[agent] -= dist_reward / 0.5
             else:
                 self.turn_number += 1
         
-        for obj in self.own_objects[team]:
+        for obj in self.own_objects[agent]:
             if obj.alive == True and obj.movement > 0:
                 unit = obj
         
@@ -555,9 +586,13 @@ class GymEnv(gym.Env):
             game_quit = True
           
         self._renderer.render_step()
-        reward += self.get_rewards(team)
+        self.rewards[agent] += self.get_rewards(agent)
+        self._accumulate_rewards()
 
-        return self.get_observation(), reward, end_turn, game_quit
+        if end_turn:
+            self.agent_selection = self._agent_selector.next()
+        elif game_quit:
+            self.dones = {agent: True for agent in self.agents}
 
     def game_handle_moves_ml_ai(self,
                                 action,
@@ -872,5 +907,5 @@ class GymEnv(gym.Env):
             pygame.quit()
 
 if __name__ == "__main__":
-    env = GymEnv("show")
+    env = PettingZooEnv("show")
     env.reset()
