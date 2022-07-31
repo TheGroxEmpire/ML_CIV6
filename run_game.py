@@ -17,7 +17,7 @@ if __name__ == '__main__':
     os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
     # --- Load / save setting
     enable_load = False
-    enable_save = False
+    enable_save = True
     
     # --- Set up your algorithm here
     N_EPISODES = 350000
@@ -31,7 +31,7 @@ if __name__ == '__main__':
 
     comment_suffix = "a(3w2s)-d(0)_default"
 
-    env = gym_env.GymEnv("show")
+    env = gym_env.GymEnv("hide")
     env.reset()
     # --- Get the current state of the game by calling get_observation_X
     # FORMAT: city health, dx unit 1, dy unit 1, hp_norm unit 1, dx unit 2, dy unit 2, hp_norm unit 2, ...
