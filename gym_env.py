@@ -185,6 +185,8 @@ class C_Unit(C_Sprite):
         else:
             self.hp -= damage
         #self.status = 'took damage'
+        if self.hp <= 0:
+            self.death_unit()
 
 
 class C_City(C_Sprite):

@@ -15,12 +15,12 @@ import dueling_ddqn
 if __name__ == '__main__':
 
     # --- Load / save setting
-    enable_load = True
-    enable_save = True
+    enable_load = False
+    enable_save = False
     
     # --- Set up your algorithm here
     N_EPISODES = 350000
-    N_TURNS = 20
+    N_TURNS = 50
     '''Algorithm list:
         - dqn
         - dueling_ddqn
@@ -30,7 +30,7 @@ if __name__ == '__main__':
 
     comment_suffix = "a(3w2s)-d(2w1s)_default"
 
-    env = gym_env.GymEnv("hide")
+    env = gym_env.GymEnv("show")
     env.reset()
     # --- Get the current state of the game by calling get_observation_X
     # FORMAT: city health, dx unit 1, dy unit 1, hp_norm unit 1, dx unit 2, dy unit 2, hp_norm unit 2, ...
@@ -136,7 +136,7 @@ if __name__ == '__main__':
         # --- Update tensorboard reward
         
         # --- Save model and data value every 100 episodes or at the last episode
-        if enable_save and (epoch % 100 == 0 or epoch == episode_end-1):
+        if enable_save and (epoch % 1000 == 0 or epoch == episode_end-1):
             attacker_agent.save_model(f'attacker_{algorithm_version}_{comment_suffix}')
             defender_agent.save_model(f'defender_{algorithm_version}_{comment_suffix}')
 
@@ -146,8 +146,8 @@ if __name__ == '__main__':
                 writer.writerow(defender_r)
 
             with tensorboard_writer.as_default():
-                tf.summary.scalar(name=f"attacker_reward", data=np.mean(attacker_r[-100:]), step=epoch)
-                tf.summary.scalar(name=f"defender_reward", data=np.mean(defender_r[-100:]), step=epoch)
+                tf.summary.scalar(name=f"attacker_reward", data=np.mean(attacker_r[-1000:]), step=epoch)
+                tf.summary.scalar(name=f"defender_reward", data=np.mean(defender_r[-1000:]), step=epoch)
                 tensorboard_writer.flush()
 
     env.close()    
