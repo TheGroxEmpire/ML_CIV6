@@ -271,7 +271,7 @@ def attack(aggressor,
 class PettingZooEnv(AECEnv):
     metadata = {"render_modes": ["show", "hide"], "render_fps": 4}
 
-    def __init__(self, render_mode=None):
+    def __init__(self, max_turn, render_mode=None, ):
         self.possible_agents = ["attacker", "defender"]
         self.observation_space = {
             agent: spaces.Discrete(36) for agent in self.possible_agents
@@ -282,6 +282,8 @@ class PettingZooEnv(AECEnv):
             agent: spaces.Discrete(7) for agent in self.possible_agents
         }
         
+        self.max_turn = max_turn
+
         assert render_mode is None or render_mode in self.metadata["render_modes"]
         self.render_mode = render_mode
         self._renderer = Renderer(self.render_mode, self._render_frame)
@@ -339,7 +341,7 @@ class PettingZooEnv(AECEnv):
         
         return np.concatenate((location, hp, movement), axis=None)
 
-    def reset(self, ep_number = 0, seed=None):
+    def reset(self, seed=None):
         # We need the following line to seed self.np_random
         self.surface_main = None
         self.clock = None
@@ -350,7 +352,7 @@ class PettingZooEnv(AECEnv):
         self.infos = {agent: {} for agent in self.agents}
         self.state = {agent: None for agent in self.agents}
         self.observations = {agent: None for agent in self.agents}
-        self.turn_number = 0
+        self.turn_number = 1
 
         self._agent_selector = agent_selector(self.agents)
         self.agent_selection = self._agent_selector.next()
@@ -562,6 +564,8 @@ class PettingZooEnv(AECEnv):
                         dist = hex_distance([obj.x, obj.y], [self.city_objects[city_loc].x, self.city_objects[city_loc].y])
                         dist_reward = float(dist - 1) / (max([constants.MAP_HEIGHT, constants.MAP_WIDTH]) - 2)
                         self.rewards[agent] -= dist_reward / 0.5
+            elif self.turn_number >= self.max_turn:
+                game_quit = True
             else:
                 self.turn_number += 1
         
@@ -589,10 +593,10 @@ class PettingZooEnv(AECEnv):
         self.rewards[agent] += self.get_rewards(agent)
         self._accumulate_rewards()
 
-        if end_turn:
-            self.agent_selection = self._agent_selector.next()
-        elif game_quit:
+        if game_quit:
             self.dones = {agent: True for agent in self.agents}
+        elif end_turn:
+            self.agent_selection = self._agent_selector.next()
 
     def game_handle_moves_ml_ai(self,
                                 action,
@@ -808,6 +812,9 @@ class PettingZooEnv(AECEnv):
                           self.game_map.grid[(int(x), int(y))].rect.y - self.game_map.grid[(int(x), int(y))].rect.h / 4))
 
     def draw_game(self):
+        # --- Return list of all events in the event queue (This is to stop it from crashing the window)
+        pygame.event.get()
+
         # --- Clear the surface
         self.surface_main.fill(constants.COLOR_DEFAULT_BG)
 

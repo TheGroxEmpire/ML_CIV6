@@ -19,7 +19,7 @@ if __name__ == '__main__':
     enable_save = False
     
     # --- Set up your algorithm here
-    N_EPISODES = 350000
+    N_EPISODES = 1
     N_TURNS = 20
     '''Algorithm list:
         - dqn
@@ -30,7 +30,7 @@ if __name__ == '__main__':
 
     comment_suffix = "a(3w2s)-d(2w1s)_default"
 
-    env = pettingzoo_env.PettingZooEnv("show")
+    env = pettingzoo_env.PettingZooEnv(N_TURNS, "show")
     env.reset()
     # --- Get the current state of the game by calling get_observation_X
     # FORMAT: city health, dx unit 1, dy unit 1, hp_norm unit 1, dx unit 2, dy unit 2, hp_norm unit 2, ...
@@ -86,27 +86,21 @@ if __name__ == '__main__':
         env.reset()
         # --- Get start time
         s = time.time()
-        for step in range(N_TURNS):
-            attacker_reward_episode = 0
-            defender_reward_episode = 0
-            for agent in env.agent_iter():
-                print(f"{agent} turn")
-                next_state, reward, done, info = env.last()
-                action = agent_dict[agent].act(state)
-                agent_dict[agent].remember(state, next_state, action, action, done)
-                env.step(action)
-                state = np.array(next_state)
-                if agent == 'attacker':
-                    attacker_reward_episode += reward
-                else:
-                    defender_reward_episode += reward
-                    break
-
-                if done:
-                    break
+        for agent in env.agent_iter():
+            #print(f"{agent} turn")
+            next_state, reward, done, info = env.last()
+            action = agent_dict[agent].act(state)
+            agent_dict[agent].remember(state, next_state, action, action, done)
+            state = np.array(next_state)
+            if agent == 'attacker':
+                attacker_reward_episode = reward
+            else:
+                defender_reward_episode = reward
 
             if done:
                 break
+
+            env.step(action)                   
 
         # --- Replay the agent past experience
         attacker_agent.replay()
