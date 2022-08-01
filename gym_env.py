@@ -775,6 +775,9 @@ class GymEnv(gym.Env):
                           self.game_map.grid[(int(x), int(y))].rect.y - self.game_map.grid[(int(x), int(y))].rect.h / 4))
 
     def draw_game(self):
+        # --- Return list of all events in the event queue (This is to stop it from crashing the window)
+        pygame.event.get()
+        
         # --- Clear the surface
         self.surface_main.fill(constants.COLOR_DEFAULT_BG)
 
