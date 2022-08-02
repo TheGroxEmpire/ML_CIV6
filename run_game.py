@@ -13,14 +13,14 @@ import dqn
 import dueling_ddqn
 
 if __name__ == '__main__':
-
+    
     os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
     # --- Load / save setting
-    enable_load = False
+    enable_load = True
     enable_save = True
     
     # --- Set up your algorithm here
-    N_EPISODES = 350000
+    N_EPISODES = 261000
     N_TURNS = 20
     '''Algorithm list:
         - dqn
@@ -40,7 +40,7 @@ if __name__ == '__main__':
 
     # --- Data list for plot
     attacker_r = np.array([])
-    defender_r = np.array([])
+    #defender_r = np.array([])
     episodes = np.array([])
 
     # --- instantiate agentss
@@ -64,7 +64,7 @@ if __name__ == '__main__':
         with open(f"./plots/{algorithm_version}_{comment_suffix}.csv") as f:
             lines = list(csv.reader(f))
         lines = np.array(lines, float)
-        attacker_r, defender_r = lines[:2]
+        attacker_r = lines[0]
         # Cumulative episodes is the number of episode from previous load. If there's nothing to load, start at 0
         cumulative_episodes = len(attacker_r)
         attacker_agent.load_model(f'attacker_{algorithm_version}_{comment_suffix}')
