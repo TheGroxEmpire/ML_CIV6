@@ -533,7 +533,7 @@ class GymEnv(gym.Env):
                         dist = hex_distance([obj.x, obj.y], [self.city_objects[city_loc].x, self.city_objects[city_loc].y])
                         dist_reward = float(dist - 1) / (max([constants.MAP_HEIGHT, constants.MAP_WIDTH]) - 2)
                         reward -= dist_reward / 0.5
-            self.turn_number += 1
+                self.turn_number += 1
         
         for obj in self.own_objects[team]:
             if obj.alive == True and obj.movement > 0:
