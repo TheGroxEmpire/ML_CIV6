@@ -15,7 +15,7 @@ import dueling_ddqn
 if __name__ == '__main__':
 
     # --- Load / save setting
-    enable_load = False
+    enable_load = True
     enable_save = True
     
     # --- Set up your algorithm here
@@ -75,8 +75,7 @@ if __name__ == '__main__':
 
     training_start_time = time.time()
     episode_start = cumulative_episodes+1
-    episode_end = cumulative_episodes+N_EPISODES+1
-    for epoch in range(episode_start, episode_end):
+    for epoch in range(episode_start, N_EPISODES+1):
 
         # --- Initialize the game by putting units and city on the playing field, etc.
         env.reset()
