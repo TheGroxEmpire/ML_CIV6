@@ -135,7 +135,7 @@ if __name__ == '__main__':
         # --- Update tensorboard reward
         
         # --- Save model and data value every 100 episodes or at the last episode
-        if enable_save and (epoch % 1000 == 0 or epoch == episode_end-1):
+        if enable_save and (epoch % 1000 == 0 or epoch == N_EPISODES-1):
             attacker_agent.save_model(f'attacker_{algorithm_version}_{comment_suffix}')
             defender_agent.save_model(f'defender_{algorithm_version}_{comment_suffix}')
 
