@@ -319,8 +319,7 @@ class GymEnv(gym.Env):
             hp = np.append(hp, obj.hp / obj.hp_max)
             # --- Normalized movement point
             movement = np.append(movement, obj.movement / obj.movement_max)
-            
-        
+                    
         return np.concatenate((location, hp, movement), axis=None)
 
     def reset(self, ep_number = 0, seed=None):
