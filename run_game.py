@@ -16,7 +16,7 @@ if __name__ == '__main__':
 
     # --- Load / save setting
     enable_load = False
-    enable_save = True
+    enable_save = False
     
     # --- Set up your algorithm here
     N_EPISODES = 350000
