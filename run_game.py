@@ -15,8 +15,8 @@ import dueling_ddqn
 if __name__ == '__main__':
 
     # --- Load / save setting
-    enable_load = True
-    enable_save = True
+    enable_load = False
+    enable_save = False
     
     # --- Set up your algorithm here
     N_EPISODES = 350000
