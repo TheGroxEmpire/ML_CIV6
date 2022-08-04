@@ -20,7 +20,7 @@ if __name__ == '__main__':
     enable_save = True
     
     # --- Set up your algorithm here
-    N_EPISODES = 261000
+    N_EPISODES = 350000
     N_TURNS = 20
     '''Algorithm list:
         - dqn
@@ -76,8 +76,7 @@ if __name__ == '__main__':
 
     training_start_time = time.time()
     episode_start = cumulative_episodes+1
-    episode_end = cumulative_episodes+N_EPISODES+1
-    for epoch in range(episode_start, episode_end):
+    for epoch in range(episode_start, N_EPISODES+1):
 
         # --- Initialize the game by putting units and city on the playing field, etc.
         env.reset()
@@ -137,7 +136,7 @@ if __name__ == '__main__':
         # --- Update tensorboard reward
         
         # --- Save model and data value every 100 episodes or at the last episode
-        if enable_save and (epoch % 1000 == 0 or epoch == episode_end-1):
+        if enable_save and (epoch % 1000 == 0 or epoch == N_EPISODES):
             attacker_agent.save_model(f'attacker_{algorithm_version}_{comment_suffix}')
             #defender_agent.save_model(f'defender_{algorithm_version}_{comment_suffix}')
 
