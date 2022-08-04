@@ -16,11 +16,11 @@ if __name__ == '__main__':
     
     os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
     # --- Load / save setting
-    enable_load = True
+    enable_load = False
     enable_save = True
     
     # --- Set up your algorithm here
-    N_EPISODES = 350000
+    N_EPISODES = 500000
     N_TURNS = 20
     '''Algorithm list:
         - dqn
@@ -43,16 +43,16 @@ if __name__ == '__main__':
     #defender_r = np.array([])
     episodes = np.array([])
 
-    # --- instantiate agentss
+    # --- instantiate agents
     algorithm_dict = {
         'dqn': dqn.Agent,
         'dueling_ddqn': dueling_ddqn.Agent,
         'ppo': ppo.Agent,
     }
     # Attacker action space
-    attacker_agent = algorithm_dict[algorithm_version](state, 7, lr=0.005, batch_size=256, replace=1000)
+    attacker_agent = algorithm_dict[algorithm_version](state, 7)
     # Defender action space
-    #defender_agent  = algorithm_dict[algorithm_version](state, 7, lr=0.005, batch_size=256, replace=1000)
+    #defender_agent  = algorithm_dict[algorithm_version](state, 7)
 
     if enable_save:
         if not os.path.exists(f"./logs/{algorithm_version}_{comment_suffix}"):

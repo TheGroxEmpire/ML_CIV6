@@ -313,14 +313,13 @@ class GymEnv(gym.Env):
         for obj in self.game_objects:
             dx_norm = (self.game_objects[city_loc].x - obj.x) / constants.MAP_WIDTH
             dy_norm = (self.game_objects[city_loc].y - obj.y) / constants.MAP_HEIGHT
-            np.append(location, dx_norm)
-            np.append(location, dy_norm)
+            location = np.append(location, dx_norm)
+            location = np.append(location, dy_norm)
             # --- Normalized HP
-            np.append(hp, obj.hp / obj.hp_max)
+            hp = np.append(hp, obj.hp / obj.hp_max)
             # --- Normalized movement point
-            np.append(movement, obj.movement / obj.movement_max)
-            
-        
+            movement = np.append(movement, obj.movement / obj.movement_max)
+                    
         return np.concatenate((location, hp, movement), axis=None)
 
     def reset(self, ep_number = 0, seed=None):
@@ -776,7 +775,6 @@ class GymEnv(gym.Env):
     def draw_game(self):
         # --- Return list of all events in the event queue (This is to stop it from crashing the window)
         pygame.event.get()
-
         # --- Clear the surface
         self.surface_main.fill(constants.COLOR_DEFAULT_BG)
 
