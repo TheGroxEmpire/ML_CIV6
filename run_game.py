@@ -2,7 +2,6 @@
 # Basic file how to run the game and control it with an AI
 
 import os
-from re import A
 import tensorflow as tf
 import pettingzoo_env
 import csv
