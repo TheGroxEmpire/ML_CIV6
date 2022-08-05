@@ -8,28 +8,25 @@ import csv
 import time
 import numpy as np
 import matplotlib.pyplot as plt
-import ppo
-import dqn
-import dueling_ddqn
 
 from ray.rllib.agents.ppo.ppo import PPOTrainer
+from ray.rllib.agents.dqn.dqn import DQNTrainer
+from ray.rllib.contrib.maddpg.maddpg import MADDPGTrainer
 from ray.tune.registry import register_env
 from ray.rllib.env import PettingZooEnv
 
 if __name__ == '__main__':
-    # --- Load / save setting
+    os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+
+    # --- Load / save setting   
     enable_load = False
     enable_save = False
     
     # --- Set up your algorithm here
-    N_EPISODES = 1
+    N_EPISODES = 5000000
     N_TURNS = 20
-    '''Algorithm list:
-        - dqn
-        - dueling_ddqn
-        - ppo
-    '''
-    algorithm_version = 'dueling_ddqn'
+
+    algorithm_version = 'dueling_ddqn_rllib'
 
     comment_suffix = "a(3w2s)-d(2w1s)_default"
 
@@ -51,19 +48,21 @@ if __name__ == '__main__':
 
     # --- instantiate agentss
     algorithm_dict = {
-        'dqn': dqn.Agent,
-        'dueling_ddqn': dueling_ddqn.Agent,
-        'ppo': ppo.Agent,
+        'dueling_ddqn_rllib': DQNTrainer(config={
+                                "env": "env",
+                                }),
+        'ppo_rllib': PPOTrainer(config={
+                                "env": "env",
+                                }),
+        'maddpg_rllib': MADDPGTrainer(config={
+                                "env": "env",
+                                })
     }
+    
     # Attacker action space
-    # attacker_agent = algorithm_dict[algorithm_version](state, 7)
-    attacker_agent = PPOTrainer(config={
-                                "env": "env",
-                                })
+    attacker_agent = algorithm_dict[algorithm_version]
     # Defender action space
-    defender_agent  = PPOTrainer(config={
-                                "env": "env",
-                                })
+    defender_agent  = algorithm_dict[algorithm_version]
 
     agent_dict = {
         'attacker' : attacker_agent,
@@ -153,11 +152,3 @@ if __name__ == '__main__':
         plt.savefig(f"plots/rewards_vs_episodes_{algorithm_version}_{comment_suffix}.png")
 
     plt.show()
-    
-
-            
-
-
-
-
-
