@@ -29,7 +29,7 @@ if __name__ == '__main__':
     '''
     algorithm_version = 'dueling_ddqn'
 
-    comment_suffix = "a(3w2s)-d(0)_default"
+    comment_suffix = "a(3w2s)-d(0)_10000-replace"
 
     env = gym_env.GymEnv("hide")
     env.reset()
@@ -50,7 +50,7 @@ if __name__ == '__main__':
         'ppo': ppo.Agent,
     }
     # Attacker action space
-    attacker_agent = algorithm_dict[algorithm_version](state, 7)
+    attacker_agent = algorithm_dict[algorithm_version](state, 7, replace=10000)
     # Defender action space
     #defender_agent  = algorithm_dict[algorithm_version](state, 7)
 
