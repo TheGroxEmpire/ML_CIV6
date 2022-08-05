@@ -1,7 +1,6 @@
 from pettingzoo import AECEnv
 from pettingzoo.utils import agent_selector
 from gym import spaces
-from gym.utils.renderer import Renderer
 import pygame
 import numpy as np
 import random
@@ -273,12 +272,12 @@ class PettingZooEnv(AECEnv):
 
     def __init__(self, max_turn, render_mode=None, ):
         self.possible_agents = ["attacker", "defender"]
-        self.observation_space = {
+        self.observation_spaces = {
             agent: spaces.Discrete(36) for agent in self.possible_agents
         }
 
         # We have 7 actions for each unit
-        self.action_space = {
+        self.action_spaces = {
             agent: spaces.Discrete(7) for agent in self.possible_agents
         }
         
@@ -286,7 +285,6 @@ class PettingZooEnv(AECEnv):
 
         assert render_mode is None or render_mode in self.metadata["render_modes"]
         self.render_mode = render_mode
-        self._renderer = Renderer(self.render_mode, self._render_frame)
 
         """
         If human-rendering is used, `self.surface_main` will be a reference
@@ -301,11 +299,11 @@ class PettingZooEnv(AECEnv):
     @functools.lru_cache(maxsize=None)
     def observation_space(self, agent):
         # Gym spaces are defined and documented here: https://gym.openai.com/docs/#spaces
-        return spaces.Discrete(36)
+        return self.observation_spaces[agent]
 
     @functools.lru_cache(maxsize=None)
     def action_space(self, agent):
-        return spaces.Discrete(7)
+        return self.action_spaces[agent]
 
     def observe(self, agent):
         '''Definition returns the known universe
@@ -326,20 +324,23 @@ class PettingZooEnv(AECEnv):
         for obj in enumerate(self.game_objects):
             if obj[1].__class__ == C_City:
                 city_loc = obj[0]
+                break
 
-        # --- Find the space between each unit and the city
+        
         for obj in self.game_objects:
+            # --- Find the space between each unit and the city
             dx_norm = (self.game_objects[city_loc].x - obj.x) / constants.MAP_WIDTH
             dy_norm = (self.game_objects[city_loc].y - obj.y) / constants.MAP_HEIGHT
-            np.append(location, dx_norm)
-            np.append(location, dy_norm)
+            location = np.append(location, dx_norm)
+            location = np.append(location, dy_norm)
             # --- Normalized HP
-            np.append(hp, obj.hp / obj.hp_max)
+            hp = np.append(hp, obj.hp / obj.hp_max)
             # --- Normalized movement point
-            np.append(movement, obj.movement / obj.movement_max)
-            
-        
-        return np.concatenate((location, hp, movement), axis=None)
+            movement = np.append(movement, obj.movement / obj.movement_max)
+
+        state = np.concatenate((location, hp, movement), axis=None)
+        print(state)
+        return state        
 
     def reset(self, seed=None):
         # We need the following line to seed self.np_random
@@ -478,9 +479,6 @@ class PettingZooEnv(AECEnv):
         self.enemy_objects = {'attacker': self.defender_objects,
                               'defender': self.attacker_objects}
 
-        self._renderer.reset()
-        self._renderer.render_step()
-
     def get_rewards(self, team):
         '''This definition will return the attacker agent reward status for each step as
         well as the location of the city relative to the attacker agent units'''
@@ -589,9 +587,10 @@ class PettingZooEnv(AECEnv):
         if action == 'QUIT':
             game_quit = True
           
-        self._renderer.render_step()
         self.rewards[agent] += self.get_rewards(agent)
         self._accumulate_rewards()
+
+        self.render()
 
         if game_quit:
             self.dones = {agent: True for agent in self.agents}
@@ -881,12 +880,7 @@ class PettingZooEnv(AECEnv):
                         constants.COLOR_BLACK)
 
     def render(self):
-        return self._renderer.get_renders()
-
-    def _render_frame(self, mode):
-        assert mode is not None
-
-        if self.surface_main is None and mode == "show":
+        if self.surface_main is None and self.render_mode == "show":
             pygame.init()
             pygame.display.init()
             self.surface_main = pygame.display.set_mode((constants.MAP_WIDTH
@@ -900,11 +894,11 @@ class PettingZooEnv(AECEnv):
                                                     + int(constants.HEX_SIZE / 4)
                                                     + constants.EDGE_OFFSET * 2))#, pygame.FULLSCREEN)
             #SURFACE_MAIN = pygame.display.set_mode((1920,1080), pygame.FULLSCREEN)
-        if self.clock is None and mode == "show":
+        if self.clock is None and self.render_mode == "show":
             self.clock = pygame.time.Clock()
         
         self.map_create()
-        if mode == "show":
+        if self.render_mode == "show":
             self.draw_game()
 
 
@@ -914,5 +908,7 @@ class PettingZooEnv(AECEnv):
             pygame.quit()
 
 if __name__ == "__main__":
-    env = PettingZooEnv("show")
+    env = PettingZooEnv(20, render_mode="show")
     env.reset()
+    while True:
+        env.render()
