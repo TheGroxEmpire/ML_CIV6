@@ -33,7 +33,7 @@ if __name__ == '__main__':
 
     comment_suffix = "a(3w2s)-d(2w1s)_default"
 
-    env = pettingzoo_env.PettingZooEnv(N_TURNS, "show")
+    env = pettingzoo_env.PettingZooEnv(N_TURNS, "hide")
     def env_creator():
         return env
      
@@ -102,7 +102,6 @@ if __name__ == '__main__':
             #print(f"{agent} turn")
             policy = agent_dict[agent].get_policy(agent)
             state, reward, done, info = env.last()
-            print(state)
             action = agent_dict[agent].compute_single_action(state)
             if agent == 'attacker':
                 attacker_reward_episode = reward
@@ -114,9 +113,6 @@ if __name__ == '__main__':
 
             env.step(action)
 
-        # --- Replay the agent past experience
-        attacker_agent.replay()
-        defender_agent.replay()
         # --- Store latest reward
         attacker_r = np.append(attacker_r, attacker_reward_episode)
         defender_r = np.append(defender_r, defender_reward_episode) 

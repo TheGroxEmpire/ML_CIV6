@@ -273,7 +273,11 @@ class PettingZooEnv(AECEnv):
     def __init__(self, max_turn, render_mode=None, ):
         self.possible_agents = ["attacker", "defender"]
         self.observation_spaces = {
-            agent: spaces.Discrete(36) for agent in self.possible_agents
+            agent: spaces.Dict({
+                "location": spaces.Box(low=-1.0, high=1.0, shape=(18,), dtype=np.float32),
+                "hp": spaces.Box(low=-1.0, high=1.0, shape=(9,), dtype=np.float32),
+                "movement": spaces.Box(low=-1.0, high=1.0, shape=(9,), dtype=np.float32)
+            }) for agent in self.possible_agents
         }
 
         # We have 7 actions for each unit
@@ -338,9 +342,7 @@ class PettingZooEnv(AECEnv):
             # --- Normalized movement point
             movement = np.append(movement, obj.movement / obj.movement_max)
 
-        state = np.concatenate((location, hp, movement), axis=None)
-        print(state)
-        return state        
+        return {"location" : location, "hp": hp, "movement": movement}
 
     def reset(self, seed=None):
         # We need the following line to seed self.np_random
@@ -572,6 +574,7 @@ class PettingZooEnv(AECEnv):
                 unit = obj
         
         if not game_quit and not end_turn:
+            self.render()
             action = self.game_handle_moves_ml_ai(action_input, unit)
             all_attacker_dead = all(obj.hp <= 0 for obj in self.attacker_objects)
             if all_attacker_dead:
