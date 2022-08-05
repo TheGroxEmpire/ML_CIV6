@@ -16,7 +16,7 @@ if __name__ == '__main__':
 
     # --- Load / save setting
     enable_load = False
-    enable_save = False
+    enable_save = True
     
     # --- Set up your algorithm here
     N_EPISODES = 350000
@@ -28,7 +28,7 @@ if __name__ == '__main__':
     '''
     algorithm_version = 'dueling_ddqn'
 
-    comment_suffix = "a(3w2s)-d(2w1s)_default"
+    comment_suffix = "a(3w2s)-d(2w1s)_10000-replace"
 
     env = gym_env.GymEnv("hide")
     env.reset()
@@ -49,9 +49,9 @@ if __name__ == '__main__':
         'ppo': ppo.Agent,
     }
     # Attacker action space
-    attacker_agent = algorithm_dict[algorithm_version](state, 7)
+    attacker_agent = algorithm_dict[algorithm_version](state, 7, replace=10000)
     # Defender action space
-    defender_agent  = algorithm_dict[algorithm_version](state, 7)
+    defender_agent  = algorithm_dict[algorithm_version](state, 7, replace=10000)
 
     if enable_save:
         if not os.path.exists(f"./logs/{algorithm_version}_{comment_suffix}"):
