@@ -23,7 +23,7 @@ if __name__ == '__main__':
     enable_save = True
     
     # --- Set up your algorithm here
-    N_EPISODES = 300000
+    N_EPISODES = 5
     N_TURNS = 20
 
     algorithm_version = 'dueling_ddqn_rllib'
@@ -82,8 +82,8 @@ if __name__ == '__main__':
         attacker_r, defender_r = lines[:2]
         # Cumulative episodes is the number of episode from previous load. If there's nothing to load, start at 0
         cumulative_episodes = len(attacker_r)
-        attacker_agent.restore(f'attacker_{algorithm_version}_{comment_suffix}/checkpoint_000000')
-        defender_agent.restore(f'defender_{algorithm_version}_{comment_suffix}/checkpoint_000000')
+        attacker_agent.restore(f'./saved_model/attacker_{algorithm_version}_{comment_suffix}/checkpoint_000000')
+        defender_agent.restore(f'./saved_model/defender_{algorithm_version}_{comment_suffix}/checkpoint_000000')
         print("Continuing from last save data")
        
     else:
@@ -123,7 +123,7 @@ if __name__ == '__main__':
         # --- Save model and data value every 100 episodes or at the last episode
         if enable_save and (epoch % 1000 == 0 or epoch == episode_end-1):
             attacker_agent.save(f'./saved_model/attacker_{algorithm_version}_{comment_suffix}')
-            defender_agent.save(f'defender_{algorithm_version}_{comment_suffix}')
+            defender_agent.save(f'./saved_model/defender_{algorithm_version}_{comment_suffix}')
 
             with open(f"./plots/{algorithm_version}_{comment_suffix}.csv", 'w', newline='') as csvfile:
                 writer = csv.writer(csvfile)

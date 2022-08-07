@@ -540,7 +540,7 @@ class PettingZooEnv(AECEnv):
             return self._was_done_step(action)
         
         agent = self.agent_selection
-        self._cumulative_rewards[agent] = 0
+        self._clear_rewards()
 
         self.state[self.agent_selection] = action
 
@@ -592,13 +592,14 @@ class PettingZooEnv(AECEnv):
           
         self.rewards[agent] += self.get_rewards(agent)
         self._accumulate_rewards()
-
         self.render()
 
         if game_quit:
             self.dones = {agent: True for agent in self.agents}
         elif end_turn:
+            self._cumulative_rewards[agent] = 0
             self.agent_selection = self._agent_selector.next()
+            
 
     def game_handle_moves_ml_ai(self,
                                 action,
