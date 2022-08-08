@@ -16,14 +16,13 @@ from ray.tune.registry import register_env
 from ray.rllib.env import PettingZooEnv
 
 if __name__ == '__main__':
-    os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
     # --- Load / save setting   
     enable_load = False
     enable_save = True
     
     # --- Set up your algorithm here
-    N_EPISODES = 5
+    N_EPISODES = 500000
     N_TURNS = 20
 
     algorithm_version = 'dueling_ddqn_rllib'
@@ -82,8 +81,8 @@ if __name__ == '__main__':
         attacker_r, defender_r = lines[:2]
         # Cumulative episodes is the number of episode from previous load. If there's nothing to load, start at 0
         cumulative_episodes = len(attacker_r)
-        attacker_agent.restore(f'./saved_model/attacker_{algorithm_version}_{comment_suffix}/checkpoint_000000')
-        defender_agent.restore(f'./saved_model/defender_{algorithm_version}_{comment_suffix}/checkpoint_000000')
+        attacker_agent.restore(f'./saved_model/attacker_{algorithm_version}_{comment_suffix}/checkpoint_000000/checkpoint-0')
+        defender_agent.restore(f'./saved_model/defender_{algorithm_version}_{comment_suffix}/checkpoint_000000/checkpoint-0')
         print("Continuing from last save data")
        
     else:
