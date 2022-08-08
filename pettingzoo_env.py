@@ -345,7 +345,9 @@ class PettingZooEnv(AECEnv):
         return {"location" : location, "hp": hp, "movement": movement}
 
     def reset(self, seed=None):
-        # We need the following line to seed self.np_random
+        if seed is not None:
+            self.seed(seed=seed)
+
         self.surface_main = None
         self.clock = None
         self.agents = self.possible_agents[:]
@@ -529,7 +531,7 @@ class PettingZooEnv(AECEnv):
     def step(self,
              action_input=0):
         # --- agent action definition
-        action = 'no-action'
+        action = None
         game_quit = False
         end_turn = False
         unit = None
@@ -586,7 +588,7 @@ class PettingZooEnv(AECEnv):
                     if obj.hp <= 0:
                         print("City is destroyed")
                         game_quit = True
-        
+
         if action == 'QUIT':
             game_quit = True
           

@@ -1,6 +1,8 @@
 # constants.py, place to put the game constants
 
 import pygame
+import os
+
 pygame.init()
 
 #   ______   ______    __        ______   .______          _______.
@@ -87,11 +89,16 @@ NEIGHBORING_TILES = [(1,0), (1,-1), (0,-1), (-1,0), (1,1), (0,1)]
 # |____/| .__/|_|  |_|\__\___||___/
 #       |_|
 
+if "TUNE_ORIG_WORKING_DIR" in os.environ:
+    original_dir = os.environ["TUNE_ORIG_WORKING_DIR"]
+else:
+    original_dir = '.'
+
 #character
-S_WARRIOR = pygame.transform.scale(pygame.image.load('data/warrior_1.png'), (CELL_WIDTH, CELL_HEIGHT))
-S_SLINGER = pygame.transform.scale(pygame.image.load('data/slinger_1.png'), (CELL_WIDTH, CELL_HEIGHT))
-S_CITY = pygame.transform.scale(pygame.image.load('data/city.png'), (CELL_WIDTH, CELL_HEIGHT))
-S_PLAINS = pygame.transform.scale(pygame.image.load('data/plains.png'), (HEX_SIZE, HEX_SIZE))
+S_WARRIOR = pygame.transform.scale(pygame.image.load(original_dir+'/data/warrior_1.png'), (CELL_WIDTH, CELL_HEIGHT))
+S_SLINGER = pygame.transform.scale(pygame.image.load(original_dir+'/data/slinger_1.png'), (CELL_WIDTH, CELL_HEIGHT))
+S_CITY = pygame.transform.scale(pygame.image.load(original_dir+'/data/city.png'), (CELL_WIDTH, CELL_HEIGHT))
+S_PLAINS = pygame.transform.scale(pygame.image.load(original_dir+'/data/plains.png'), (HEX_SIZE, HEX_SIZE))
 
 
 # Fonts
