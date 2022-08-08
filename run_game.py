@@ -17,7 +17,7 @@ if __name__ == '__main__':
     config = deepcopy(get_trainer_class(algorithm_version)._default_config)
 
     def env_creator(max_turn=20, render_mode="hide"):
-        env = pettingzoo_env.PettingZooEnv(max_turn=max_turn, render_mode=render_mode)
+        env = pettingzoo_env.PettingZooEnv(max_turn, render_mode)
         return env
 
     test_env = PettingZooEnv(env_creator())
