@@ -1,93 +1,99 @@
+from unittest import result
 import pettingzoo_env
 
 import os
-from copy import deepcopy
-
+import numpy as np
+from ray import air, tune
+from ray.tune import CLIReporter
 from ray.tune.registry import register_env
+from ray.rllib.algorithms.ppo import PPOConfig
 from ray.rllib.env import PettingZooEnv
-from ray.rllib.agents.registry import get_trainer_class
-from ray.rllib.agents.ppo.ppo_tf_policy import PPOTFPolicy
-from ray.rllib.agents.ppo.ppo import PPOTrainer
-from ray.rllib.agents.dqn.dqn_tf_policy import DQNTFPolicy
-from ray.rllib.agents.dqn.dqn import DQNTrainer
-from ray.rllib.contrib.maddpg.maddpg_policy import MADDPGTFPolicy
-from ray.rllib.contrib.maddpg.maddpg import MADDPGTrainer
-from ray.tune.logger import pretty_print
-from ray import tune
+from ray.rllib.algorithms.callbacks import DefaultCallbacks
+
+
+class MyCallbacks(DefaultCallbacks):
+
+    def on_train_result(self, *, algorithm, result: dict, **kwargs):
+
+        result["custom_metrics"]["policy_reward_mean"] = {
+
+            "attacker": result["policy_reward_mean"].get("attacker", np.nan),
+
+            "defender": result["policy_reward_mean"].get("defender", np.nan),
+
+        }
 
 if __name__ == '__main__':
     os.environ["TUNE_ORIG_WORKING_DIR"] = os.getcwd()
     
-    algorithm_name = 'PPO'
+    algorithm_version = 'PPO'
     comment_suffix = "a(3w2s)-d(2w1s)_default"
-    N_EPISODE = 1
-    CHECKPOINT_FREQ = 0
 
-    trainer_dict = {
-        'DQN': PPOTrainer,
-        'PPO': DQNTrainer,
-        'MADDPG': MADDPGTrainer
-    }
+    config = PPOConfig()
 
-    policy_dict = {
-        'DQN': DQNTFPolicy,
-        'PPO': PPOTFPolicy,
-        'MADDPG': MADDPGTFPolicy
-    }        
-
-    config = deepcopy(get_trainer_class(algorithm_name)._default_config)
-
-    def env_creator(max_turn=20, render_mode="show"):
-        return pettingzoo_env.PettingZooEnv(max_turn, render_mode)
-
-    register_env("my_env", lambda config: PettingZooEnv(env_creator())) 
+    def env_creator(max_turn=20, render_mode="hide"):
+        env = pettingzoo_env.PettingZooEnv(max_turn, render_mode)
+        return env
 
     test_env = PettingZooEnv(env_creator())
     obs_space = test_env.observation_space
-    act_space = test_env.action_space 
+    act_space = test_env.action_space
+    
+    register_env("my_env",lambda config: PettingZooEnv(env_creator()))
 
-    policies = {
-        "attacker": (
-            policy_dict[algorithm_name],
-            obs_space,
-            act_space,
-            {},
-        ),
-        "defender": (
-            policy_dict[algorithm_name],
-            obs_space,
-            act_space,
-            {},
-        ),
-    }
+    config.multi_agent(
 
-    def policy_mapping_fn(agent_id, episode, worker, **kwargs):
-        return agent_id
+        policies={pid: (None, obs_space, act_space, {}) for pid in
 
-    config["num_gpus"] = int(os.environ.get("RLLIB_NUM_GPUS", "0"))
-    config["log_level"] = "INFO"
-    config["num_workers"] = 1
+                  test_env.env.agents},
 
-    config_attacker = config
-    config_defender = config
+        policy_mapping_fn=(lambda agent_id, episode, **kwargs: agent_id),
 
-    config_attacker["multiagent"] = {
-        "policies": policies,
-        "policy_mapping_fn": policy_mapping_fn,
-        "policies_to_train": ["attacker"],
-    }
+        )  
 
-    config_defender["multiagent"] = {
-        "policies": policies,
-        "policy_mapping_fn": policy_mapping_fn,
-        "policies_to_train": ["defender"],
-    }
+    config.num_gpus = 0
+    config.log_level = "INFO"
+    config.rollouts(num_rollout_workers=2)
+    config.environment(env="my_env")
+    config.batch_mode = "complete_episodes"
+    
 
-    attacker_agent = trainer_dict[algorithm_name](env="my_env", config=config_attacker)
-    defender_agent = trainer_dict[algorithm_name](env="my_env", config=config_defender)
+    config = config.to_dict()
+     
+    register_env("env", lambda config: PettingZooEnv(env_creator()))
+    test_env = PettingZooEnv(env_creator())
+    obs_space = test_env.observation_space
+    act_space = test_env.action_space
 
-    for epoch in range(N_EPISODE):
-       result_attacker = attacker_agent.train()
-       print(pretty_print(result_attacker))
-       result_defender = defender_agent.train()
-       print(pretty_print(result_defender))
+    result = tune.Tuner(algorithm_version,
+                param_space=config,
+                run_config=air.RunConfig(
+                    checkpoint_config=air.CheckpointConfig(
+
+                        checkpoint_frequency=1000,
+                    ),
+
+                    local_dir=f"logs/{comment_suffix}",
+
+                    progress_reporter=CLIReporter(
+
+                    metric_columns={
+
+                        "training_iteration": "training_iteration",
+
+                        "time_total_s": "time_total_s",
+
+                        "timesteps_total": "timesteps",
+
+                        "episodes_this_iter": "episodes_trained",
+
+                        "custom_metrics/policy_reward_mean/attacker": "m_reward_a",
+
+                        "custom_metrics/policy_reward_mean/defender": "m_reward_d",
+
+                        "episode_reward_mean": "mean_reward_sum",
+                    },
+                    sort_by_metric=True,
+                    ),
+                ),
+            ).fit()
