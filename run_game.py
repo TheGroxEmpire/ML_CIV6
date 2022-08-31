@@ -51,11 +51,12 @@ if __name__ == '__main__':
 
         )  
 
-    config.num_gpus = 0
+    config.num_gpus = 1
     config.log_level = "INFO"
-    config.rollouts(num_rollout_workers=2)
+    config.rollouts(num_rollout_workers=7)
     config.environment(env="my_env")
     config.batch_mode = "complete_episodes"
+    config.train_batch_size = 10000
     
 
     config = config.to_dict()

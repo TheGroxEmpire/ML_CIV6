@@ -27,7 +27,7 @@ def helper_text_objects(incoming_text,
     return Text_surface, Text_surface.get_rect()
 
 def hex_coords(obj1):
-    """This definition will find out how far obj1 is from obj2, using the axial coordinte system"""
+    """This definition will find out how far obj1 is from obj2, using the axial coordinate system"""
     obj1_cube = []
     if obj1[1] % 2 == 0:
         obj1_cube.append(obj1[0] - obj1[1] / 2)
@@ -38,10 +38,12 @@ def hex_coords(obj1):
     return obj1_cube
 
 def hex_distance(obj1, obj2):
-    """This definition will find out how hard obj1 is from obj2"""
+    """This definition will find out how far obj1 is from obj2"""
 
     obj1_coords = hex_coords(obj1)
     obj2_coords = hex_coords(obj2)
+
+
 
     return max([abs(obj1_coords[0] - obj2_coords[0]),
                 abs(obj1_coords[1] - obj2_coords[1]),
@@ -484,28 +486,29 @@ class PettingZooEnv(AECEnv):
                               'defender': self.attacker_objects}
 
     def get_rewards(self, team):
-        '''This definition will return the attacker agent reward status for each step as
-        well as the location of the city relative to the attacker agent units'''
+        '''This definition will return the agent's reward status for a unit turn step
+            and reward status on enemy caused by unit action in that turn step'''
         reward = 0
-        
+
         for obj in enumerate(self.city_objects):
                 if team == 'attacker':
                     # --- Rewards for city status
-                        if obj[1].status == 'dead':
-                            reward += 20
-                            obj[1].status = None
-                        elif obj[1].status == 'took damage':
-                            reward += 0.5
-                            obj[1].status = obj[1].status_default
-                        elif obj[1].status == 'healed':
-                            reward -= 0.3
-                            obj[1].status = obj[1].status_default
+                    if obj[1].status == 'dead':
+                        reward += 20
+                        obj[1].status = None
+                    elif obj[1].status == 'took damage':
+                        reward += 0.5
+                        obj[1].status = obj[1].status_default
+                    elif obj[1].status == 'healed':
+                        reward -= 0.3
+                        obj[1].status = obj[1].status_default
         # print(f"Reward before unit status: {reward}")
         # --- REWARDS for own unit status
         for obj in self.own_objects[team]:
             #print('BEFORE: {} status of {}'.format(obj.name_instance, obj.status))
             if obj.status == 'dead' and team == 'attacker':
                 reward -= 1
+                obj.status = None
             elif obj.status == 'took damage':
                 reward += 0
                 obj.status = obj.status_default
@@ -543,38 +546,17 @@ class PettingZooEnv(AECEnv):
         
         agent = self.agent_selection
         self._clear_rewards()
-
         self.state[self.agent_selection] = action
 
         if not any(obj.movement > 0 for obj in self.own_objects[agent]):
             end_turn = True
-            for obj in self.own_objects[agent]:
-                if obj.alive == True:
-                    obj.movement = obj.movement_max
-            if agent == 'attacker':
-                self.rewards[agent] -= 1
-                for obj in enumerate(self.city_objects):
-                    city_loc = obj[0]
-                     # Check to see if the city is dead or not
-                    if self.city_objects[city_loc].hp >= 0:
-                        # Attempt to heal the city otherwise
-                        self.city_take_turn(self.city_objects[city_loc])
-
-                for obj in self.own_objects[agent]:
-                        # --- Rewards for how far they are away from the city!
-                        # - This is a linear reward, 0 for being next to city, -0.5 for maximum distance, per unit
-                        dist = hex_distance([obj.x, obj.y], [self.city_objects[city_loc].x, self.city_objects[city_loc].y])
-                        dist_reward = float(dist - 1) / (max([constants.MAP_HEIGHT, constants.MAP_WIDTH]) - 2)
-                        self.rewards[agent] -= dist_reward / 0.5
-            elif self.turn_number >= self.max_turn:
-                game_quit = True
-            else:
-                self.turn_number += 1
+            game_quit = self.end_agent_turn(agent)
         
+        # Move agent's units sequentially
         for obj in self.own_objects[agent]:
             if obj.alive == True and obj.movement > 0:
                 unit = obj
-        
+                                                                                                                                                                                                              
         if not game_quit and not end_turn:
             self.render()
             action = self.game_handle_moves_ml_ai(action_input, unit)
@@ -585,9 +567,9 @@ class PettingZooEnv(AECEnv):
 
             for obj in self.city_objects:
                 # Check to see if the city is dead or not
-                    if obj.hp <= 0:
-                        print("City is destroyed")
-                        game_quit = True
+                if obj.hp <= 0:
+                    print("City is destroyed")
+                    game_quit = True
 
         if action == 'QUIT':
             game_quit = True
@@ -599,9 +581,35 @@ class PettingZooEnv(AECEnv):
         if game_quit:
             self.dones = {agent: True for agent in self.agents}
         elif end_turn:
-            self._cumulative_rewards[agent] = 0
             self.agent_selection = self._agent_selector.next()
+
+    def end_agent_turn(self, agent):
+        for obj in self.own_objects[agent]:
+            if obj.alive == True:
+                obj.movement = obj.movement_max
+        if agent == 'attacker':
+            # self.rewards[agent] -= 1
+            for obj in enumerate(self.city_objects):
+                city_loc = obj[0]
+                    # Check to see if the city is dead or not
+                if self.city_objects[city_loc].hp >= 0:
+                    # Attempt to heal the city otherwise
+                    self.city_take_turn(self.city_objects[city_loc])
+
+            for obj in self.own_objects[agent]:
+                    if obj.alive :
+                        # --- Rewards for how far they are away from the city!
+                        # - This is a linear reward, 0 for being next to city, -0.66 for maximum distance, per unit
+                        dist = hex_distance([obj.x, obj.y], [self.city_objects[city_loc].x, self.city_objects[city_loc].y])
+                        dist_reward = float(dist - 1) / (max([constants.MAP_HEIGHT, constants.MAP_WIDTH]) - 2)
+                        self.rewards[agent] -= dist_reward / 0.5
+
+        elif self.turn_number >= self.max_turn:
+            return True
+        else:
+            self.turn_number += 1
             
+        return False  
 
     def game_handle_moves_ml_ai(self,
                                 action,
