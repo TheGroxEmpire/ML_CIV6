@@ -502,6 +502,7 @@ class PettingZooEnv(AECEnv):
                     elif obj[1].status == 'healed':
                         reward -= 0.3
                         obj[1].status = obj[1].status_default
+
         # print(f"Reward before unit status: {reward}")
         # --- REWARDS for own unit status
         for obj in self.own_objects[unit.team]:
@@ -589,8 +590,11 @@ class PettingZooEnv(AECEnv):
         if action == 'QUIT':
             game_quit = True
           
-        self.rewards[agent] += self.get_rewards(unit)
-        self._accumulate_rewards()
+        # Unit will be None if a team has ended its turn
+        if unit != None:
+            self.rewards[agent] += self.get_rewards(unit)
+            self._accumulate_rewards()
+
         self.render()
 
         if game_quit:
