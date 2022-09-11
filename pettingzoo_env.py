@@ -505,35 +505,31 @@ class PettingZooEnv(AECEnv):
 
         # print(f"Reward before unit status: {reward}")
         # --- REWARDS for own unit status
-        for obj in self.own_objects[unit.team]:
-            #print('BEFORE: {} status of {}'.format(obj.name_instance, obj.status))
-            if obj.status == 'dead' and unit.team == 'attacker':
-                reward -= 1
-                obj.status = None
-            elif obj.status == 'took damage':
-                reward += 0
-                obj.status = obj.status_default
-            elif obj.status == 'hit wall':
-                reward -= 1
-                obj.status = obj.status_default
-            elif obj.status == 'healed':
-                reward += 0.1
-                obj.status = obj.status_default
-            elif obj.status == 'attacked':
-                reward += 0.2
-                obj.status = obj.status_default
+        if unit.status == 'dead' and unit.team == 'attacker':
+            reward -= 1
+            unit.status = None
+        elif unit.status == 'took damage':
+            reward += 0
+            unit.status = unit.status_default
+        elif unit.status == 'hit wall':
+            reward -= 1
+            unit.status = unit.status_default
+        elif unit.status == 'healed':
+            reward += 0.1
+            unit.status = unit.status_default
+        elif unit.status == 'attacked':
+            reward += 0.2
+            unit.status = unit.status_default
         
         if unit.team == 'attacker':
             for obj in enumerate(self.city_objects):
                 city_loc = obj[0]
 
-            for obj in self.own_objects[unit.team]:
-                if obj == unit:
-                    # --- Rewards for how far they are away from the city!
-                    # - This is a linear reward, 0 for being next to city, -0.66 for maximum distance, per unit
-                    dist = hex_distance([obj.x, obj.y], [self.city_objects[city_loc].x, self.city_objects[city_loc].y])
-                    dist_reward = float(dist - 1) / (max([constants.MAP_HEIGHT, constants.MAP_WIDTH]) - 2)
-                    reward -= dist_reward / 0.5
+            # --- Rewards for how far unit is from the city!
+            # - This is a linear reward, 0 for being next to city, -0.66 for maximum distance, per unit
+            dist = hex_distance([unit.x, unit.y], [self.city_objects[city_loc].x, self.city_objects[city_loc].y])
+            dist_reward = float(dist - 1) / (max([constants.MAP_HEIGHT, constants.MAP_WIDTH]) - 2)
+            reward -= dist_reward / 0.5
 
         # print(f"Reward after unit status: {reward}")
         # --- REWARDS for opponent unit status
@@ -561,7 +557,7 @@ class PettingZooEnv(AECEnv):
         
         agent = self.agent_selection
         self._clear_rewards()
-        self._cumulative_rewards[agent] = 0
+        self._cumulative_rewards = {agent: 0 for agent in self.agents}
         self.state[self.agent_selection] = action
 
         if not any(obj.movement > 0 for obj in self.own_objects[agent]):
@@ -594,6 +590,8 @@ class PettingZooEnv(AECEnv):
         if unit != None:
             self.rewards[agent] += self.get_rewards(unit)
             self._accumulate_rewards()
+        
+        print(f"Cumulative rewards {agent}: {self._cumulative_rewards}")
 
         self.render()
 
