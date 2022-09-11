@@ -485,13 +485,13 @@ class PettingZooEnv(AECEnv):
         self.enemy_objects = {'attacker': self.defender_objects,
                               'defender': self.attacker_objects}
 
-    def get_rewards(self, team):
+    def get_rewards(self, unit):
         '''This definition will return the agent's reward status for a unit turn step
             and reward status on enemy caused by unit action in that turn step'''
         reward = 0
 
         for obj in enumerate(self.city_objects):
-                if team == 'attacker':
+                if unit.team == 'attacker':
                     # --- Rewards for city status
                     if obj[1].status == 'dead':
                         reward += 20
@@ -504,9 +504,9 @@ class PettingZooEnv(AECEnv):
                         obj[1].status = obj[1].status_default
         # print(f"Reward before unit status: {reward}")
         # --- REWARDS for own unit status
-        for obj in self.own_objects[team]:
+        for obj in self.own_objects[unit.team]:
             #print('BEFORE: {} status of {}'.format(obj.name_instance, obj.status))
-            if obj.status == 'dead' and team == 'attacker':
+            if obj.status == 'dead' and unit.team == 'attacker':
                 reward -= 1
                 obj.status = None
             elif obj.status == 'took damage':
@@ -521,13 +521,27 @@ class PettingZooEnv(AECEnv):
             elif obj.status == 'attacked':
                 reward += 0.2
                 obj.status = obj.status_default
+        
+        if unit.team == 'attacker':
+            for obj in enumerate(self.city_objects):
+                city_loc = obj[0]
+
+            for obj in self.own_objects[unit.team]:
+                if obj == unit:
+                    # --- Rewards for how far they are away from the city!
+                    # - This is a linear reward, 0 for being next to city, -0.66 for maximum distance, per unit
+                    dist = hex_distance([obj.x, obj.y], [self.city_objects[city_loc].x, self.city_objects[city_loc].y])
+                    dist_reward = float(dist - 1) / (max([constants.MAP_HEIGHT, constants.MAP_WIDTH]) - 2)
+                    reward -= dist_reward / 0.5
+
         # print(f"Reward after unit status: {reward}")
         # --- REWARDS for opponent unit status
-        for obj in self.enemy_objects[team]:
+        for obj in self.enemy_objects[unit.team]:
             #print('BEFORE: {} status of {}'.format(obj.name_instance, obj.status))
             if obj.status == 'dead':
                 reward += 3
                 obj.status = None
+
         # print(f"Reward before final: {reward}")
         return reward
 
@@ -575,7 +589,7 @@ class PettingZooEnv(AECEnv):
         if action == 'QUIT':
             game_quit = True
           
-        self.rewards[agent] += self.get_rewards(agent)
+        self.rewards[agent] += self.get_rewards(unit)
         self._accumulate_rewards()
         self.render()
 
@@ -596,14 +610,6 @@ class PettingZooEnv(AECEnv):
                 if self.city_objects[city_loc].hp >= 0:
                     # Attempt to heal the city otherwise
                     self.city_take_turn(self.city_objects[city_loc])
-
-            for obj in self.own_objects[agent]:
-                    if obj.alive :
-                        # --- Rewards for how far they are away from the city!
-                        # - This is a linear reward, 0 for being next to city, -0.66 for maximum distance, per unit
-                        dist = hex_distance([obj.x, obj.y], [self.city_objects[city_loc].x, self.city_objects[city_loc].y])
-                        dist_reward = float(dist - 1) / (max([constants.MAP_HEIGHT, constants.MAP_WIDTH]) - 2)
-                        self.rewards[agent] -= dist_reward / 0.5
 
         elif self.turn_number >= self.max_turn:
             return True
