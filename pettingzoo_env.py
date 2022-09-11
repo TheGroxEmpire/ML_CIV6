@@ -546,6 +546,7 @@ class PettingZooEnv(AECEnv):
         
         agent = self.agent_selection
         self._clear_rewards()
+        self._cumulative_rewards[agent] = 0
         self.state[self.agent_selection] = action
 
         if not any(obj.movement > 0 for obj in self.own_objects[agent]):
