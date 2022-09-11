@@ -590,8 +590,6 @@ class PettingZooEnv(AECEnv):
         if unit != None:
             self.rewards[agent] += self.get_rewards(unit)
             self._accumulate_rewards()
-        
-        print(f"Cumulative rewards {agent}: {self._cumulative_rewards}")
 
         self.render()
 
