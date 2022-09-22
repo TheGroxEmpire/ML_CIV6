@@ -5,9 +5,7 @@ import numpy as np
 from ray import air, tune
 from ray.tune import CLIReporter
 from ray.tune.registry import register_env
-from ray.rllib.algorithms.ppo import PPOConfig
 from ray.rllib.algorithms.dqn import DQNConfig
-from ray.rllib.algorithms.qmix import QMixConfig
 from ray.rllib.env import PettingZooEnv
 from ray.rllib.algorithms.callbacks import DefaultCallbacks
 
@@ -54,10 +52,9 @@ if __name__ == '__main__':
 
     config.num_gpus = 0
     config.log_level = "INFO"
-    config.rollouts(num_rollout_workers=3)
     config.environment(env="my_env")
+    config.rollouts(num_rollout_workers=3)
     
-
     config = config.to_dict()
      
     register_env("env", lambda config: PettingZooEnv(env_creator()))
@@ -66,36 +63,36 @@ if __name__ == '__main__':
     act_space = test_env.action_space
 
     result = tune.Tuner(algorithm_version,
-            param_space=config,
-            run_config=air.RunConfig(
-                stop={"episodes_total": 100000},
-                checkpoint_config=air.CheckpointConfig(
+                param_space=config,
+                run_config=air.RunConfig(
+                    stop={"num_env_steps_sampled": 100000000},
+                    checkpoint_config=air.CheckpointConfig(
 
-                    checkpoint_frequency=10000,
-                    checkpoint_at_end=True,
+                        checkpoint_frequency=10000,
+                        checkpoint_at_end=True,
+                    ),
+
+                    local_dir=f"models/{comment_suffix}",
+
+                    progress_reporter=CLIReporter(
+
+                    metric_columns={
+
+                        "training_iteration": "training_iteration",
+
+                        "time_total_s": "time_total_s",
+
+                        "timesteps_total": "timesteps",
+
+                        "episodes_this_iter": "episodes_trained",
+
+                        "custom_metrics/policy_reward_mean/attacker": "m_reward_a",
+
+                        "custom_metrics/policy_reward_mean/defender": "m_reward_d",
+
+                        "episode_reward_mean": "mean_reward_sum",
+                    },
+                    sort_by_metric=True,
+                    ),
                 ),
-
-                local_dir=f"models/{comment_suffix}",
-
-                progress_reporter=CLIReporter(
-
-                metric_columns={
-
-                    "training_iteration": "training_iteration",
-
-                    "time_total_s": "time_total_s",
-
-                    "timesteps_total": "timesteps",
-
-                    "episodes_this_iter": "episodes_trained",
-
-                    "custom_metrics/policy_reward_mean/attacker": "m_reward_a",
-
-                    "custom_metrics/policy_reward_mean/defender": "m_reward_d",
-
-                    "episode_reward_mean": "mean_reward_sum",
-                },
-                sort_by_metric=True,
-                ),
-            ),
-        ).fit()
+            ).fit()
