@@ -520,16 +520,6 @@ class PettingZooEnv(AECEnv):
         elif unit.status == 'attacked':
             reward += 0.2
             unit.status = unit.status_default
-        
-        if unit.team == 'attacker':
-            for obj in enumerate(self.city_objects):
-                city_loc = obj[0]
-
-            # --- Rewards for how far unit is from the city!
-            # - This is a linear reward, 0 for being next to city, -0.66 for maximum distance, per unit
-            dist = hex_distance([unit.x, unit.y], [self.city_objects[city_loc].x, self.city_objects[city_loc].y])
-            dist_reward = float(dist - 1) / (max([constants.MAP_HEIGHT, constants.MAP_WIDTH]) - 2)
-            reward -= dist_reward / 0.5
 
         # print(f"Reward after unit status: {reward}")
         # --- REWARDS for opponent unit status
@@ -603,7 +593,7 @@ class PettingZooEnv(AECEnv):
             if obj.alive == True:
                 obj.movement = obj.movement_max
         if agent == 'attacker':
-            # self.rewards[agent] -= 1
+            self.rewards[agent] -= 1
             for obj in enumerate(self.city_objects):
                 city_loc = obj[0]
                     # Check to see if the city is dead or not
