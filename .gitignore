@@ -1,4 +1,4 @@
-saved_model/
+models/
 *.pyc
 *.7z
 .idea/
