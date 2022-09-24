@@ -50,7 +50,7 @@ if __name__ == '__main__':
 
         )  
 
-    config.num_gpus = 0
+    config.num_gpus = 1
     config.log_level = "INFO"
     config.environment(env="my_env")
     config.rollouts(num_rollout_workers=3)
