@@ -5,7 +5,7 @@ import numpy as np
 from ray import air, tune
 from ray.tune import CLIReporter
 from ray.tune.registry import register_env
-from ray.rllib.algorithms.dqn import DQNConfig
+from ray.rllib.algorithms.impala import ImpalaConfig
 from ray.rllib.env import PettingZooEnv
 from ray.rllib.algorithms.callbacks import DefaultCallbacks
 
@@ -25,12 +25,12 @@ class MyCallbacks(DefaultCallbacks):
 if __name__ == '__main__':
     os.environ["TUNE_ORIG_WORKING_DIR"] = os.getcwd()
     
-    algorithm_version = 'DQN'
+    algorithm_version = 'IMPALA'
     comment_suffix = "a(3w2s)-d(2w1s)_default"
 
-    config = DQNConfig()
+    config = ImpalaConfig()
 
-    def env_creator(max_turn=20, render_mode="show"):
+    def env_creator(max_turn=20, render_mode="hide"):
         env = pettingzoo_env.PettingZooEnv(max_turn, render_mode)
         return env
 
@@ -53,7 +53,7 @@ if __name__ == '__main__':
     config.num_gpus = 1
     config.log_level = "INFO"
     config.environment(env="my_env")
-    config.rollouts(num_rollout_workers=1)
+    config.rollouts(num_rollout_workers=3)
     
     config = config.to_dict()
      
@@ -65,7 +65,7 @@ if __name__ == '__main__':
     result = tune.Tuner(algorithm_version,
                 param_space=config,
                 run_config=air.RunConfig(
-                    stop={"num_env_steps_sampled": 100000000},
+                    stop={"timesteps_total": 100000000},
                     checkpoint_config=air.CheckpointConfig(
 
                         checkpoint_frequency=10000,

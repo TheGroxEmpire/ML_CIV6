@@ -1,14 +1,11 @@
-from email import policy
 import pettingzoo_env
 
 import os
 import numpy as np
-import ray.rllib.algorithms.ppo as ppo
-import ray.rllib.algorithms.dqn as dqn
+from ray import air, tune
+from ray.tune import CLIReporter
 from ray.tune.registry import register_env
-from ray.rllib.algorithms.ppo import PPOConfig
-from ray.rllib.algorithms.dqn import DQNConfig
-from ray.rllib.algorithms.qmix import QMixConfig
+from ray.rllib.algorithms.apex_dqn import ApexDQNConfig
 from ray.rllib.env import PettingZooEnv
 from ray.rllib.algorithms.callbacks import DefaultCallbacks
 
@@ -28,11 +25,10 @@ class MyCallbacks(DefaultCallbacks):
 if __name__ == '__main__':
     os.environ["TUNE_ORIG_WORKING_DIR"] = os.getcwd()
     
-    algorithm_version = 'DQN'
+    algorithm_version = 'APEX'
     comment_suffix = "a(3w2s)-d(2w1s)_default"
-    checkpoint_dir = "logs\a(3w2s)-d(2w1s)_default\DQN\DQN_my_env_4b191_00000_0_2022-09-08_13-05-52\checkpoint_033523\checkpoint-33523"
 
-    config = DQNConfig()
+    config = ApexDQNConfig()
 
     def env_creator(max_turn=20, render_mode="show"):
         env = pettingzoo_env.PettingZooEnv(max_turn, render_mode)
@@ -54,26 +50,51 @@ if __name__ == '__main__':
 
         )  
 
-    config.num_gpus = 0
+    config.num_gpus = 1
     config.log_level = "INFO"
-    config.rollouts(num_rollout_workers=3)
     config.environment(env="my_env")
+    config.rollouts(num_rollout_workers=3)
     
-
     config = config.to_dict()
+     
+    register_env("env", lambda config: PettingZooEnv(env_creator()))
+    test_env = PettingZooEnv(env_creator())
+    obs_space = test_env.observation_space
+    act_space = test_env.action_space
 
-    agent = dqn.DQN(config=config, env="my_env")
+    # result = tune.Tuner(algorithm_version,
+    #             param_space=config,
+    #             run_config=air.RunConfig(
+    #                 stop={"num_env_steps_sampled": 100000000},
+    #                 checkpoint_config=air.CheckpointConfig(
 
-    done = False
-    obs = test_env.reset()
-    episode_reward = 0
-    agents = ["attacker", "defender"]
-    while True:
-        action = {}
-        for agent_id, agent_obs in obs.items():
-            policy_id = config['multiagent']['policy_mapping_fn'](agent_id, None)
-            action[agent_id] = agent.compute_single_action(agent_obs, policy_id=policy_id)
-            
-        obs, reward, done, info = test_env.step(action[agent_id])
+    #                     checkpoint_frequency=10000,
+    #                     checkpoint_at_end=True,
+    #                 ),
 
-        
+    #                 local_dir=f"models/{comment_suffix}",
+
+    #                 progress_reporter=CLIReporter(
+
+    #                 metric_columns={
+
+    #                     "training_iteration": "training_iteration",
+
+    #                     "time_total_s": "time_total_s",
+
+    #                     "timesteps_total": "timesteps",
+
+    #                     "episodes_this_iter": "episodes_trained",
+
+    #                     "custom_metrics/policy_reward_mean/attacker": "m_reward_a",
+
+    #                     "custom_metrics/policy_reward_mean/defender": "m_reward_d",
+
+    #                     "episode_reward_mean": "mean_reward_sum",
+    #                 },
+    #                 sort_by_metric=True,
+    #                 ),
+    #             ),
+    #         ).fit()
+    results = tune.run(algorithm_version, algorithm_version, config=config, 
+                        restore="G:\Repos\ML_CIV6\models\a(3w2s)-d(2w1s)_default\APEX\APEX_my_env_5ed3c_00000_0_2022-09-27_20-07-42\checkpoint_004000\checkpoint-4000",)
